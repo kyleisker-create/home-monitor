@@ -1,8 +1,8 @@
-const CACHE = 'home-monitor-v1';
+const CACHE = 'home-monitor-v2';
 const ASSETS = [
-  '/',
-  '/index.html',
-  '/manifest.json',
+  '/home-monitor/',
+  '/home-monitor/index.html',
+  '/home-monitor/manifest.json',
 ];
 
 self.addEventListener('install', e => {
