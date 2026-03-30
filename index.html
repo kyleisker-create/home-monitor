@@ -1,0 +1,1133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0a0f1e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Home Monitor">
+<meta name="description" content="Home Monitor - Real-time home sensor dashboard">
+<link rel="manifest" href="manifest.json">
+<title>Home Monitor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-base:      #080d1a;
+    --bg-panel:     #0e1628;
+    --bg-card:      #131c32;
+    --bg-card-hover:#172038;
+    --border:       rgba(255,255,255,0.07);
+    --border-accent:rgba(255,255,255,0.14);
+    --text-primary: #e8edf8;
+    --text-secondary:#7a8aaa;
+    --text-dim:     #3d4d6a;
+    --accent-blue:  #3d8ef8;
+    --accent-cyan:  #22d3c8;
+    --accent-amber: #f5a623;
+    --accent-red:   #f04040;
+    --accent-green: #2ecc71;
+    --ok:           #2ecc71;
+    --warn:         #f5a623;
+    --danger:       #f04040;
+    --font-display: 'Syne', sans-serif;
+    --font-mono:    'DM Mono', monospace;
+    --radius:       14px;
+    --radius-sm:    8px;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { font-size: 16px; }
+
+  body {
+    background: var(--bg-base);
+    color: var(--text-primary);
+    font-family: var(--font-display);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Grid background pattern */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(61,142,248,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(61,142,248,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ── HEADER ── */
+  header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(8,13,26,0.85);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .logo-mark {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .logo-mark svg { width: 18px; height: 18px; }
+
+  .app-title {
+    font-family: var(--font-display);
+    font-size: 17px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    color: var(--text-primary);
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .status-pill {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-secondary);
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 5px 12px;
+  }
+
+  .status-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--ok);
+    box-shadow: 0 0 6px var(--ok);
+    animation: pulse-dot 2s ease-in-out infinite;
+  }
+
+  .status-dot.warn { background: var(--warn); box-shadow: 0 0 6px var(--warn); }
+  .status-dot.danger { background: var(--danger); box-shadow: 0 0 6px var(--danger); }
+
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+
+  .last-update {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+
+  /* ── MAIN LAYOUT ── */
+  main {
+    position: relative;
+    z-index: 1;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 28px 20px 60px;
+  }
+
+  /* ── SECTION LABEL ── */
+  .section-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 14px;
+    padding-left: 2px;
+  }
+
+  /* ── ALERT BANNER ── */
+  .alert-banner {
+    display: none;
+    align-items: center;
+    gap: 12px;
+    background: rgba(240,64,64,0.1);
+    border: 1px solid rgba(240,64,64,0.3);
+    border-radius: var(--radius-sm);
+    padding: 12px 16px;
+    margin-bottom: 24px;
+    font-size: 13px;
+    color: #ff8080;
+    animation: slide-in 0.3s ease;
+  }
+
+  .alert-banner.visible { display: flex; }
+
+  .alert-icon {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+  }
+
+  @keyframes slide-in {
+    from { opacity: 0; transform: translateY(-8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── SENSOR GRID ── */
+  .sensor-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 14px;
+    margin-bottom: 32px;
+  }
+
+  .sensor-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.2s, background 0.2s;
+    cursor: default;
+  }
+
+  .sensor-card:hover {
+    background: var(--bg-card-hover);
+    border-color: var(--border-accent);
+  }
+
+  .sensor-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--card-accent, var(--accent-blue));
+    opacity: 0.7;
+  }
+
+  .sensor-card.status-warn { --card-accent: var(--warn); }
+  .sensor-card.status-ok   { --card-accent: var(--ok); }
+  .sensor-card.status-danger { --card-accent: var(--danger); border-color: rgba(240,64,64,0.25); }
+
+  .card-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+
+  .card-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+  }
+
+  .card-badge {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 4px;
+    background: rgba(46,204,113,0.12);
+    color: var(--ok);
+    border: 1px solid rgba(46,204,113,0.2);
+  }
+
+  .card-badge.warn {
+    background: rgba(245,166,35,0.12);
+    color: var(--warn);
+    border-color: rgba(245,166,35,0.2);
+  }
+
+  .card-badge.danger {
+    background: rgba(240,64,64,0.12);
+    color: var(--danger);
+    border-color: rgba(240,64,64,0.2);
+  }
+
+  .card-value {
+    font-family: var(--font-mono);
+    font-size: 36px;
+    font-weight: 300;
+    line-height: 1;
+    color: var(--text-primary);
+    letter-spacing: -0.02em;
+    margin-bottom: 4px;
+  }
+
+  .card-value .unit {
+    font-size: 16px;
+    color: var(--text-secondary);
+    font-weight: 400;
+    margin-left: 2px;
+  }
+
+  .card-sub {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-top: 8px;
+  }
+
+  /* Spark line */
+  .spark {
+    margin-top: 14px;
+    height: 32px;
+    width: 100%;
+  }
+
+  /* ── CHART SECTION ── */
+  .charts-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 32px;
+  }
+
+  @media (max-width: 680px) {
+    .charts-grid { grid-template-columns: 1fr; }
+  }
+
+  .chart-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+  }
+
+  .chart-title {
+    font-family: var(--font-display);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .chart-range {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text-dim);
+    display: flex;
+    gap: 8px;
+  }
+
+  .range-btn {
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 4px;
+    transition: all 0.15s;
+  }
+
+  .range-btn.active, .range-btn:hover {
+    background: var(--bg-panel);
+    color: var(--accent-blue);
+  }
+
+  .chart-canvas-wrap {
+    position: relative;
+    height: 140px;
+  }
+
+  /* ── HVAC PANEL ── */
+  .hvac-panel {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 32px;
+  }
+
+  .hvac-inner {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 14px;
+    margin-top: 16px;
+  }
+
+  @media (max-width: 500px) {
+    .hvac-inner { grid-template-columns: 1fr; }
+  }
+
+  .hvac-metric {
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 16px;
+    text-align: center;
+  }
+
+  .hvac-metric-label {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 8px;
+  }
+
+  .hvac-metric-value {
+    font-family: var(--font-mono);
+    font-size: 28px;
+    font-weight: 300;
+    color: var(--text-primary);
+    letter-spacing: -0.02em;
+  }
+
+  .hvac-metric-value .unit {
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+
+  .delta-badge {
+    display: inline-block;
+    margin-top: 6px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 4px;
+  }
+
+  .delta-badge.good {
+    background: rgba(61,142,248,0.12);
+    color: var(--accent-blue);
+    border: 1px solid rgba(61,142,248,0.2);
+  }
+
+  .delta-badge.low {
+    background: rgba(245,166,35,0.12);
+    color: var(--warn);
+    border: 1px solid rgba(245,166,35,0.2);
+  }
+
+  /* ── ALERTS TABLE ── */
+  .alerts-panel {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 32px;
+  }
+
+  .alerts-list { margin-top: 14px; }
+
+  .alert-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+  }
+
+  .alert-row:last-child { border-bottom: none; }
+
+  .alert-time {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text-dim);
+    min-width: 80px;
+  }
+
+  .alert-type {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    min-width: 70px;
+    text-align: center;
+  }
+
+  .alert-type.info {
+    background: rgba(61,142,248,0.1);
+    color: var(--accent-blue);
+    border: 1px solid rgba(61,142,248,0.2);
+  }
+
+  .alert-type.warn {
+    background: rgba(245,166,35,0.1);
+    color: var(--warn);
+    border: 1px solid rgba(245,166,35,0.2);
+  }
+
+  .alert-msg { color: var(--text-secondary); flex: 1; }
+
+  /* ── FOOTER ── */
+  footer {
+    position: relative;
+    z-index: 1;
+    text-align: center;
+    padding: 24px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text-dim);
+    border-top: 1px solid var(--border);
+    letter-spacing: 0.08em;
+  }
+
+  /* ── MOBILE NAV ── */
+  .mobile-nav {
+    display: none;
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    z-index: 200;
+    background: rgba(8,13,26,0.95);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-top: 1px solid var(--border);
+    padding: 8px 0 env(safe-area-inset-bottom);
+    flex-direction: row;
+    justify-content: space-around;
+  }
+
+  @media (max-width: 600px) {
+    .mobile-nav { display: flex; }
+    main { padding-bottom: 80px; }
+    .last-update { display: none; }
+  }
+
+  .nav-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    padding: 6px 16px;
+    transition: color 0.15s;
+  }
+
+  .nav-btn.active, .nav-btn:hover { color: var(--accent-blue); }
+
+  .nav-btn svg { width: 20px; height: 20px; }
+
+  /* Simulated data badge */
+  .sim-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent-amber);
+    background: rgba(245,166,35,0.08);
+    border: 1px solid rgba(245,166,35,0.18);
+    border-radius: 4px;
+    padding: 3px 8px;
+    margin-left: 8px;
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="header-left">
+    <div class="logo-mark">
+      <svg viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M9 2L3 5.5V9C3 12.3 5.6 15.4 9 16C12.4 15.4 15 12.3 15 9V5.5L9 2Z" stroke="white" stroke-width="1.5" stroke-linejoin="round"/>
+        <path d="M6.5 9L8 10.5L11.5 7" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <span class="app-title">Home Monitor</span>
+    <span class="sim-badge">&#9632; simulated</span>
+  </div>
+  <div class="header-right">
+    <div class="status-pill">
+      <div class="status-dot" id="status-dot"></div>
+      <span id="status-text">All clear</span>
+    </div>
+    <span class="last-update" id="last-update">Updated just now</span>
+  </div>
+</header>
+
+<main>
+
+  <!-- ALERT BANNER -->
+  <div class="alert-banner" id="alert-banner">
+    <svg class="alert-icon" viewBox="0 0 18 18" fill="none">
+      <path d="M9 2L1 15h16L9 2z" stroke="#f04040" stroke-width="1.5" stroke-linejoin="round"/>
+      <path d="M9 7v4M9 12.5v.5" stroke="#f04040" stroke-width="1.5" stroke-linecap="round"/>
+    </svg>
+    <span id="alert-banner-text"></span>
+  </div>
+
+  <!-- SENSOR CARDS -->
+  <div class="section-label">Live readings</div>
+  <div class="sensor-grid" id="sensor-grid">
+
+    <!-- Indoor Temp -->
+    <div class="sensor-card status-ok" id="card-temp">
+      <div class="card-header">
+        <span class="card-label">Indoor temp</span>
+        <span class="card-badge" id="badge-temp">Normal</span>
+      </div>
+      <div class="card-value" id="val-temp">72<span class="unit">°F</span></div>
+      <div class="card-sub" id="sub-temp">Range today: 70 – 74°F</div>
+      <svg class="spark" id="spark-temp" viewBox="0 0 180 32" preserveAspectRatio="none"></svg>
+    </div>
+
+    <!-- Humidity -->
+    <div class="sensor-card status-ok" id="card-humid">
+      <div class="card-header">
+        <span class="card-label">Humidity</span>
+        <span class="card-badge" id="badge-humid">Normal</span>
+      </div>
+      <div class="card-value" id="val-humid">48<span class="unit">%</span></div>
+      <div class="card-sub" id="sub-humid">Comfort range: 40–60%</div>
+      <svg class="spark" id="spark-humid" viewBox="0 0 180 32" preserveAspectRatio="none"></svg>
+    </div>
+
+    <!-- Leak Detection -->
+    <div class="sensor-card status-ok" id="card-leak">
+      <div class="card-header">
+        <span class="card-label">Leak detection</span>
+        <span class="card-badge" id="badge-leak">Dry</span>
+      </div>
+      <div class="card-value" id="val-leak" style="font-size:24px;padding-top:4px">No leak</div>
+      <div class="card-sub" id="sub-leak">3 sensors active</div>
+      <div style="margin-top:14px;display:flex;gap:8px" id="leak-sensors">
+        <span style="font-family:var(--font-mono);font-size:10px;padding:4px 10px;border-radius:4px;background:rgba(46,204,113,0.1);color:var(--ok);border:1px solid rgba(46,204,113,0.2)">Kitchen</span>
+        <span style="font-family:var(--font-mono);font-size:10px;padding:4px 10px;border-radius:4px;background:rgba(46,204,113,0.1);color:var(--ok);border:1px solid rgba(46,204,113,0.2)">Basement</span>
+        <span style="font-family:var(--font-mono);font-size:10px;padding:4px 10px;border-radius:4px;background:rgba(46,204,113,0.1);color:var(--ok);border:1px solid rgba(46,204,113,0.2)">Utility</span>
+      </div>
+    </div>
+
+    <!-- HVAC Supply -->
+    <div class="sensor-card status-ok" id="card-supply">
+      <div class="card-header">
+        <span class="card-label">HVAC supply</span>
+        <span class="card-badge" id="badge-supply">Normal</span>
+      </div>
+      <div class="card-value" id="val-supply">58<span class="unit">°F</span></div>
+      <div class="card-sub">Air leaving unit</div>
+      <svg class="spark" id="spark-supply" viewBox="0 0 180 32" preserveAspectRatio="none"></svg>
+    </div>
+
+    <!-- HVAC Return -->
+    <div class="sensor-card status-ok" id="card-return">
+      <div class="card-header">
+        <span class="card-label">HVAC return</span>
+        <span class="card-badge" id="badge-return">Normal</span>
+      </div>
+      <div class="card-value" id="val-return">72<span class="unit">°F</span></div>
+      <div class="card-sub">Air entering unit</div>
+      <svg class="spark" id="spark-return" viewBox="0 0 180 32" preserveAspectRatio="none"></svg>
+    </div>
+
+    <!-- Delta T -->
+    <div class="sensor-card status-ok" id="card-delta">
+      <div class="card-header">
+        <span class="card-label">Delta T</span>
+        <span class="card-badge" id="badge-delta">Good</span>
+      </div>
+      <div class="card-value" id="val-delta">14<span class="unit">°F</span></div>
+      <div class="card-sub">Return minus supply temp</div>
+      <div style="margin-top:10px;font-family:var(--font-mono);font-size:10px;color:var(--text-dim)">Ideal range: 14–22°F</div>
+    </div>
+
+  </div>
+
+  <!-- CHARTS -->
+  <div class="section-label">24-hour history</div>
+  <div class="charts-grid">
+    <div class="chart-card">
+      <div class="chart-title">
+        Indoor temperature
+        <div class="chart-range">
+          <button class="range-btn active" onclick="setRange(this,'6h')">6h</button>
+          <button class="range-btn" onclick="setRange(this,'12h')">12h</button>
+          <button class="range-btn" onclick="setRange(this,'24h')">24h</button>
+        </div>
+      </div>
+      <div class="chart-canvas-wrap">
+        <canvas id="chart-temp"></canvas>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">
+        Humidity
+        <div class="chart-range">
+          <button class="range-btn active" onclick="setRange(this,'6h','humid')">6h</button>
+          <button class="range-btn" onclick="setRange(this,'12h','humid')">12h</button>
+          <button class="range-btn" onclick="setRange(this,'24h','humid')">24h</button>
+        </div>
+      </div>
+      <div class="chart-canvas-wrap">
+        <canvas id="chart-humid"></canvas>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">
+        HVAC supply vs return
+        <div class="chart-range">
+          <button class="range-btn active" onclick="setRange(this,'6h','hvac')">6h</button>
+          <button class="range-btn" onclick="setRange(this,'12h','hvac')">12h</button>
+          <button class="range-btn" onclick="setRange(this,'24h','hvac')">24h</button>
+        </div>
+      </div>
+      <div class="chart-canvas-wrap">
+        <canvas id="chart-hvac"></canvas>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Delta T over time</div>
+      <div class="chart-canvas-wrap">
+        <canvas id="chart-delta"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- ALERTS LOG -->
+  <div class="section-label">Recent alerts</div>
+  <div class="alerts-panel">
+    <div class="alerts-list" id="alerts-list">
+      <div class="alert-row">
+        <span class="alert-time">Today 06:14</span>
+        <span class="alert-type info">Info</span>
+        <span class="alert-msg">HVAC system started — morning cycle</span>
+      </div>
+      <div class="alert-row">
+        <span class="alert-time">Today 02:30</span>
+        <span class="alert-type warn">Warn</span>
+        <span class="alert-msg">Humidity reached 61% — above comfort threshold</span>
+      </div>
+      <div class="alert-row">
+        <span class="alert-time">Yesterday</span>
+        <span class="alert-type info">Info</span>
+        <span class="alert-msg">All sensors reporting normally</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- THRESHOLDS -->
+  <div class="section-label">Alert thresholds</div>
+  <div class="alerts-panel">
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;margin-top:4px">
+
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <label style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim);letter-spacing:0.1em;text-transform:uppercase">Indoor temp min (°F)</label>
+        <input type="number" id="thresh-temp-min" value="60" style="background:var(--bg-panel);border:1px solid var(--border-accent);border-radius:var(--radius-sm);padding:8px 12px;color:var(--text-primary);font-family:var(--font-mono);font-size:14px;outline:none">
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <label style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim);letter-spacing:0.1em;text-transform:uppercase">Indoor temp max (°F)</label>
+        <input type="number" id="thresh-temp-max" value="82" style="background:var(--bg-panel);border:1px solid var(--border-accent);border-radius:var(--radius-sm);padding:8px 12px;color:var(--text-primary);font-family:var(--font-mono);font-size:14px;outline:none">
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <label style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim);letter-spacing:0.1em;text-transform:uppercase">Humidity max (%)</label>
+        <input type="number" id="thresh-humid-max" value="65" style="background:var(--bg-panel);border:1px solid var(--border-accent);border-radius:var(--radius-sm);padding:8px 12px;color:var(--text-primary);font-family:var(--font-mono);font-size:14px;outline:none">
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <label style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim);letter-spacing:0.1em;text-transform:uppercase">Delta T min (°F)</label>
+        <input type="number" id="thresh-delta-min" value="12" style="background:var(--bg-panel);border:1px solid var(--border-accent);border-radius:var(--radius-sm);padding:8px 12px;color:var(--text-primary);font-family:var(--font-mono);font-size:14px;outline:none">
+      </div>
+
+    </div>
+    <div style="margin-top:16px">
+      <button onclick="saveThresholds()" style="background:var(--accent-blue);color:#fff;border:none;border-radius:var(--radius-sm);padding:10px 24px;font-family:var(--font-display);font-size:13px;font-weight:600;cursor:pointer;transition:opacity 0.15s" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">Save thresholds</button>
+      <span id="thresh-saved" style="font-family:var(--font-mono);font-size:11px;color:var(--ok);margin-left:12px;opacity:0;transition:opacity 0.3s">Saved</span>
+    </div>
+  </div>
+
+</main>
+
+<footer>
+  HOME MONITOR &nbsp;&#183;&nbsp; ESP32 SENSOR NETWORK &nbsp;&#183;&nbsp; DATA UPDATES EVERY 30 SECONDS
+</footer>
+
+<!-- MOBILE NAV -->
+<nav class="mobile-nav">
+  <button class="nav-btn active">
+    <svg viewBox="0 0 20 20" fill="none">
+      <rect x="2" y="2" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.5"/>
+      <rect x="11" y="2" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.5"/>
+      <rect x="2" y="11" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.5"/>
+      <rect x="11" y="11" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.5"/>
+    </svg>
+    Live
+  </button>
+  <button class="nav-btn">
+    <svg viewBox="0 0 20 20" fill="none">
+      <polyline points="2,14 6,8 10,11 14,5 18,9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    History
+  </button>
+  <button class="nav-btn">
+    <svg viewBox="0 0 20 20" fill="none">
+      <path d="M10 2a6 6 0 016 6c0 3.5-2 6-2 6H6s-2-2.5-2-6a6 6 0 016-6z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+      <path d="M8 14v1a2 2 0 004 0v-1" stroke="currentColor" stroke-width="1.5"/>
+    </svg>
+    Alerts
+  </button>
+  <button class="nav-btn">
+    <svg viewBox="0 0 20 20" fill="none">
+      <circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.5"/>
+      <circle cx="10" cy="8" r="2.5" stroke="currentColor" stroke-width="1.5"/>
+      <path d="M4.5 17c0-3 2.5-4.5 5.5-4.5s5.5 1.5 5.5 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    </svg>
+    Settings
+  </button>
+</nav>
+
+<!-- Chart.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+
+// ── SIMULATED DATA ENGINE ──────────────────────────────────────────────
+
+// Generate 24h of plausible readings, one per 15 minutes = 96 points
+function generateHistory(base, amplitude, noise, points) {
+  const arr = [];
+  for (let i = 0; i < points; i++) {
+    const t = i / points;
+    // Gentle sinusoidal daily cycle + noise
+    const val = base + amplitude * Math.sin(t * Math.PI * 2 - Math.PI / 2)
+                + (Math.random() - 0.5) * noise;
+    arr.push(Math.round(val * 10) / 10);
+  }
+  return arr;
+}
+
+const POINTS = 96; // 24h × 4 per hour
+const tempHistory    = generateHistory(72, 3, 1.5, POINTS);
+const humidHistory   = generateHistory(50, 8, 3,   POINTS);
+const supplyHistory  = generateHistory(58, 4, 2,   POINTS);
+const returnHistory  = tempHistory.map(v => v + (Math.random() * 0.5));
+const deltaHistory   = returnHistory.map((r, i) => Math.round((r - supplyHistory[i]) * 10) / 10);
+
+// Time labels — last 24 hours
+function makeLabels(points) {
+  const labels = [];
+  const now = new Date();
+  for (let i = points - 1; i >= 0; i--) {
+    const t = new Date(now - i * 15 * 60 * 1000);
+    labels.push(t.getHours().toString().padStart(2,'0') + ':' + t.getMinutes().toString().padStart(2,'0'));
+  }
+  return labels;
+}
+const allLabels = makeLabels(POINTS);
+
+// "Live" current values (last point + drift)
+let current = {
+  temp:   tempHistory[POINTS - 1],
+  humid:  humidHistory[POINTS - 1],
+  supply: supplyHistory[POINTS - 1],
+  ret:    returnHistory[POINTS - 1],
+  leak:   false
+};
+
+// ── THRESHOLDS ────────────────────────────────────────────────────────
+
+function getThresholds() {
+  return {
+    tempMin:   parseFloat(document.getElementById('thresh-temp-min').value)  || 60,
+    tempMax:   parseFloat(document.getElementById('thresh-temp-max').value)  || 82,
+    humidMax:  parseFloat(document.getElementById('thresh-humid-max').value) || 65,
+    deltaMin:  parseFloat(document.getElementById('thresh-delta-min').value) || 12,
+  };
+}
+
+function saveThresholds() {
+  const s = document.getElementById('thresh-saved');
+  s.style.opacity = '1';
+  setTimeout(() => s.style.opacity = '0', 2000);
+}
+
+// ── SPARK LINES ──────────────────────────────────────────────────────
+
+function drawSpark(id, data, color) {
+  const svg = document.getElementById(id);
+  if (!svg) return;
+  const w = 180, h = 32, pad = 2;
+  const slice = data.slice(-24);
+  const min = Math.min(...slice), max = Math.max(...slice);
+  const range = max - min || 1;
+  const pts = slice.map((v, i) => {
+    const x = pad + (i / (slice.length - 1)) * (w - pad * 2);
+    const y = h - pad - ((v - min) / range) * (h - pad * 2);
+    return `${x},${y}`;
+  }).join(' ');
+  svg.innerHTML = `<polyline points="${pts}" fill="none" stroke="${color}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.7"/>`;
+}
+
+// ── CHART SETUP ──────────────────────────────────────────────────────
+
+const chartDefaults = {
+  responsive: true,
+  maintainAspectRatio: false,
+  animation: { duration: 400 },
+  plugins: {
+    legend: { display: false },
+    tooltip: {
+      backgroundColor: '#0e1628',
+      borderColor: 'rgba(255,255,255,0.1)',
+      borderWidth: 1,
+      titleColor: '#7a8aaa',
+      bodyColor: '#e8edf8',
+      titleFont: { family: 'DM Mono', size: 10 },
+      bodyFont:  { family: 'DM Mono', size: 12 },
+    }
+  },
+  scales: {
+    x: {
+      ticks: { color: '#3d4d6a', font: { family: 'DM Mono', size: 9 }, maxTicksLimit: 6 },
+      grid:  { color: 'rgba(255,255,255,0.04)' },
+    },
+    y: {
+      ticks: { color: '#3d4d6a', font: { family: 'DM Mono', size: 9 }, maxTicksLimit: 5 },
+      grid:  { color: 'rgba(255,255,255,0.04)' },
+    }
+  }
+};
+
+function slicedData(arr, range) {
+  const pts = range === '6h' ? 24 : range === '12h' ? 48 : 96;
+  return arr.slice(-pts);
+}
+
+function makeLineDataset(data, color, label) {
+  return {
+    label,
+    data,
+    borderColor: color,
+    borderWidth: 1.5,
+    pointRadius: 0,
+    tension: 0.4,
+    fill: false,
+  };
+}
+
+function makeAreaDataset(data, color, label) {
+  return {
+    label,
+    data,
+    borderColor: color,
+    borderWidth: 1.5,
+    pointRadius: 0,
+    tension: 0.4,
+    fill: true,
+    backgroundColor: color.replace(')', ',0.08)').replace('rgb','rgba'),
+  };
+}
+
+const charts = {};
+
+function initChart(id, datasets, yLabel) {
+  const ctx = document.getElementById(id).getContext('2d');
+  charts[id] = new Chart(ctx, {
+    type: 'line',
+    data: { labels: allLabels.slice(-24), datasets },
+    options: { ...chartDefaults,
+      scales: {
+        ...chartDefaults.scales,
+        y: { ...chartDefaults.scales.y,
+          title: { display: !!yLabel, text: yLabel, color: '#3d4d6a', font: { family: 'DM Mono', size: 9 } }
+        }
+      }
+    }
+  });
+}
+
+initChart('chart-temp',
+  [makeAreaDataset(tempHistory.slice(-24), 'rgb(61,142,248)', 'Temp °F')],
+  '°F'
+);
+
+initChart('chart-humid',
+  [makeAreaDataset(humidHistory.slice(-24), 'rgb(34,211,200)', 'Humidity %')],
+  '%'
+);
+
+initChart('chart-hvac', [
+  makeLineDataset(supplyHistory.slice(-24), 'rgb(61,142,248)', 'Supply °F'),
+  makeLineDataset(returnHistory.slice(-24), 'rgb(245,166,35)', 'Return °F'),
+], '°F');
+
+initChart('chart-delta',
+  [makeAreaDataset(deltaHistory.slice(-24), 'rgb(46,204,113)', 'Delta T °F')],
+  '°F'
+);
+
+// Range button handler
+const rangeMap = {
+  'temp':  { chart: 'chart-temp',  data: [tempHistory] },
+  'humid': { chart: 'chart-humid', data: [humidHistory] },
+  'hvac':  { chart: 'chart-hvac',  data: [supplyHistory, returnHistory] },
+  'delta': { chart: 'chart-delta', data: [deltaHistory] },
+};
+
+function setRange(btn, range, key) {
+  key = key || 'temp';
+  const siblings = btn.parentElement.querySelectorAll('.range-btn');
+  siblings.forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const pts = range === '6h' ? 24 : range === '12h' ? 48 : 96;
+  const info = rangeMap[key];
+  const chart = charts[info.chart];
+  chart.data.labels = allLabels.slice(-pts);
+  info.data.forEach((d, i) => chart.data.datasets[i].data = d.slice(-pts));
+  chart.update();
+}
+
+// ── LIVE UPDATE LOOP ──────────────────────────────────────────────────
+
+function drift(val, step, min, max) {
+  const next = val + (Math.random() - 0.5) * step;
+  return Math.min(max, Math.max(min, Math.round(next * 10) / 10));
+}
+
+function updateLive() {
+  current.temp   = drift(current.temp,   0.4, 60, 85);
+  current.humid  = drift(current.humid,  1.2, 30, 75);
+  current.supply = drift(current.supply, 0.5, 48, 70);
+  current.ret    = drift(current.ret,    0.3, 65, 80);
+  const delta    = Math.round((current.ret - current.supply) * 10) / 10;
+
+  // Push to history
+  tempHistory.push(current.temp);     tempHistory.shift();
+  humidHistory.push(current.humid);   humidHistory.shift();
+  supplyHistory.push(current.supply); supplyHistory.shift();
+  returnHistory.push(current.ret);    returnHistory.shift();
+  deltaHistory.push(delta);           deltaHistory.shift();
+  allLabels.push(new Date().toTimeString().slice(0,5)); allLabels.shift();
+
+  const thresh = getThresholds();
+
+  // ── Temp card
+  document.getElementById('val-temp').innerHTML = `${Math.round(current.temp)}<span class="unit">°F</span>`;
+  const tempWarn = current.temp < thresh.tempMin || current.temp > thresh.tempMax;
+  setCardStatus('card-temp', 'badge-temp', tempWarn ? 'warn' : 'ok', tempWarn ? (current.temp < thresh.tempMin ? 'Low' : 'High') : 'Normal');
+
+  // ── Humidity card
+  document.getElementById('val-humid').innerHTML = `${Math.round(current.humid)}<span class="unit">%</span>`;
+  const humidWarn = current.humid > thresh.humidMax;
+  setCardStatus('card-humid', 'badge-humid', humidWarn ? 'warn' : 'ok', humidWarn ? 'High' : 'Normal');
+
+  // ── Supply card
+  document.getElementById('val-supply').innerHTML = `${Math.round(current.supply)}<span class="unit">°F</span>`;
+  setCardStatus('card-supply', 'badge-supply', 'ok', 'Normal');
+
+  // ── Return card
+  document.getElementById('val-return').innerHTML = `${Math.round(current.ret)}<span class="unit">°F</span>`;
+  setCardStatus('card-return', 'badge-return', 'ok', 'Normal');
+
+  // ── Delta card
+  document.getElementById('val-delta').innerHTML = `${delta}<span class="unit">°F</span>`;
+  const deltaLow = delta < thresh.deltaMin;
+  setCardStatus('card-delta', 'badge-delta', deltaLow ? 'warn' : 'ok', deltaLow ? 'Low' : 'Good');
+
+  // ── Spark lines
+  drawSpark('spark-temp',   tempHistory,   '#3d8ef8');
+  drawSpark('spark-humid',  humidHistory,  '#22d3c8');
+  drawSpark('spark-supply', supplyHistory, '#3d8ef8');
+  drawSpark('spark-return', returnHistory, '#f5a623');
+
+  // ── Update charts (active range)
+  ['chart-temp','chart-humid','chart-hvac','chart-delta'].forEach(id => {
+    const chart = charts[id];
+    const info = Object.values(rangeMap).find(r => r.chart === id);
+    if (!info) return;
+    const pts = chart.data.labels.length;
+    chart.data.labels = allLabels.slice(-pts);
+    info.data.forEach((d, i) => chart.data.datasets[i].data = d.slice(-pts));
+    chart.update('none');
+  });
+
+  // ── Global status
+  const anyWarn = tempWarn || humidWarn || deltaLow || current.leak;
+  const dot = document.getElementById('status-dot');
+  const statusText = document.getElementById('status-text');
+  const banner = document.getElementById('alert-banner');
+
+  if (current.leak) {
+    dot.className = 'status-dot danger';
+    statusText.textContent = 'Leak detected!';
+    banner.classList.add('visible');
+    document.getElementById('alert-banner-text').textContent = 'Water detected — check sensor locations immediately.';
+  } else if (anyWarn) {
+    dot.className = 'status-dot warn';
+    statusText.textContent = 'Warning';
+    banner.classList.remove('visible');
+  } else {
+    dot.className = 'status-dot';
+    statusText.textContent = 'All clear';
+    banner.classList.remove('visible');
+  }
+
+  document.getElementById('last-update').textContent = 'Updated ' + new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+}
+
+function setCardStatus(cardId, badgeId, status, label) {
+  const card  = document.getElementById(cardId);
+  const badge = document.getElementById(badgeId);
+  card.className  = `sensor-card status-${status}`;
+  badge.className = `card-badge${status !== 'ok' ? ' ' + status : ''}`;
+  badge.textContent = label;
+}
+
+// Init spark lines
+drawSpark('spark-temp',   tempHistory,   '#3d8ef8');
+drawSpark('spark-humid',  humidHistory,  '#22d3c8');
+drawSpark('spark-supply', supplyHistory, '#3d8ef8');
+drawSpark('spark-return', returnHistory, '#f5a623');
+
+// Update every 5 seconds (simulated; real ESP32 will push every 30s)
+setInterval(updateLive, 5000);
+updateLive();
+
+</script>
+
+<!-- PWA Service Worker Registration -->
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+</script>
+
+</body>
+</html>
