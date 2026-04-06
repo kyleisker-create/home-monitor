@@ -426,20 +426,8 @@
   <div class="section" id="section-alerts">
     <div class="section-label">Recent alerts</div>
     <div class="alerts-panel">
-      <div class="alert-row">
-        <span class="alert-time" id="alert-time-1">--</span>
-        <span class="alert-type info">Info</span>
-        <span class="alert-msg">Latest reading received from DHT22</span>
-      </div>
-      <div class="alert-row">
-        <span class="alert-time">Today</span>
-        <span class="alert-type info">Info</span>
-        <span class="alert-msg">DHT22 sensor connected and posting to Supabase</span>
-      </div>
-      <div class="alert-row">
-        <span class="alert-time">Today</span>
-        <span class="alert-type warn">Warn</span>
-        <span class="alert-msg">HVAC and leak sensors not yet connected — showing simulated data</span>
+      <div id="alerts-list">
+        <div style="font-family:var(--font-mono);font-size:11px;color:var(--text-dim);padding:12px 0">Tap Alerts to load...</div>
       </div>
     </div>
   </div>
@@ -533,6 +521,7 @@ function showSection(name) {
   document.getElementById('section-' + name).classList.add('active');
   document.getElementById('nav-' + name).classList.add('active');
   if (name === 'history') initCharts();
+  if (name === 'alerts')  fetchAlerts();
 }
 
 // ── SIMULATED DATA (HVAC only) ─────────────────────────────────────────
@@ -577,6 +566,58 @@ const realTempHist  = [];
 const realHumidHist = [];
 const realLabels    = [];
 
+// Tracks last alert time per sensor to avoid spamming (5 min cooldown)
+const lastAlertTime = { temp: 0, humid: 0 };
+const ALERT_COOLDOWN = 5 * 60 * 1000;
+
+async function logAlert(sensor, level, message, value) {
+  const now = Date.now();
+  if (now - lastAlertTime[sensor] < ALERT_COOLDOWN) return;
+  lastAlertTime[sensor] = now;
+  try {
+    await fetch(`${SUPABASE_URL}/rest/v1/alerts`, {
+      method: 'POST',
+      headers: {
+        apikey: SUPABASE_KEY,
+        Authorization: `Bearer ${SUPABASE_KEY}`,
+        'Content-Type': 'application/json',
+        Prefer: 'return=minimal'
+      },
+      body: JSON.stringify({ sensor, level, message, value })
+    });
+  } catch(e) { console.error('Alert log error:', e); }
+}
+
+async function fetchAlerts() {
+  const list = document.getElementById('alerts-list');
+  list.innerHTML = '<div style="font-family:var(--font-mono);font-size:11px;color:var(--text-dim);padding:12px 0">Loading alerts...</div>';
+  try {
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/alerts?select=*&order=created_at.desc&limit=20`,
+      { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } }
+    );
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    if (!data.length) {
+      list.innerHTML = '<div style="font-family:var(--font-mono);font-size:11px;color:var(--text-dim);padding:12px 0">No alerts logged yet.</div>';
+      return;
+    }
+    list.innerHTML = data.map(a => {
+      const t = new Date(a.created_at);
+      const timeStr = t.toLocaleDateString([], {month:'short',day:'numeric'}) + ' ' + t.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+      const levelClass = a.level === 'warn' ? 'warn' : 'info';
+      return `<div class="alert-row">
+        <span class="alert-time">${timeStr}</span>
+        <span class="alert-type ${levelClass}">${a.level === 'warn' ? 'Warn' : 'Info'}</span>
+        <span class="alert-msg">${a.message}${a.value != null ? ' (' + a.value + ')' : ''}</span>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    console.error('Fetch alerts error:', e);
+    list.innerHTML = '<div style="font-family:var(--font-mono);font-size:11px;color:var(--danger);padding:12px 0">Could not load alerts.</div>';
+  }
+}
+
 async function fetchLatest() {
   try {
     const res = await fetch(
@@ -593,17 +634,26 @@ async function fetchLatest() {
     const tempWarn  = tempF < thresh.tempMin || tempF > thresh.tempMax;
     const humidWarn = humidity > thresh.humidMax;
 
-    document.getElementById('val-temp').innerHTML  = Math.round(tempF)    + '<span class="unit">°F</span>';
-    document.getElementById('val-humid').innerHTML = Math.round(humidity)  + '<span class="unit">%</span>';
+    document.getElementById('val-temp').innerHTML  = Math.round(tempF)   + '<span class="unit">°F</span>';
+    document.getElementById('val-humid').innerHTML = Math.round(humidity) + '<span class="unit">%</span>';
 
     setStatus('card-temp',  'badge-temp',  tempWarn,  tempWarn  ? (tempF < thresh.tempMin ? 'Low' : 'High') : 'Normal');
     setStatus('card-humid', 'badge-humid', humidWarn, humidWarn ? 'High' : 'Normal');
 
+    // Log alerts to Supabase if thresholds breached
+    if (tempWarn) {
+      const dir = tempF < thresh.tempMin ? 'below minimum' : 'above maximum';
+      logAlert('temp', 'warn', `Indoor temperature ${dir} threshold`, tempF);
+    }
+    if (humidWarn) {
+      logAlert('humid', 'warn', `Humidity above maximum threshold`, humidity);
+    }
+
     const t = new Date(row.recorded_at);
     const lbl = t.getHours().toString().padStart(2,'0') + ':' + t.getMinutes().toString().padStart(2,'0');
-    realTempHist.push(tempF);   if (realTempHist.length  > POINTS) realTempHist.shift();
+    realTempHist.push(tempF);     if (realTempHist.length  > POINTS) realTempHist.shift();
     realHumidHist.push(humidity); if (realHumidHist.length > POINTS) realHumidHist.shift();
-    realLabels.push(lbl);       if (realLabels.length    > POINTS) realLabels.shift();
+    realLabels.push(lbl);         if (realLabels.length    > POINTS) realLabels.shift();
 
     drawSpark('spark-temp',  realTempHist,  '#22d3c8');
     drawSpark('spark-humid', realHumidHist, '#22d3c8');
@@ -620,7 +670,6 @@ async function fetchLatest() {
       document.getElementById('alert-banner').classList.remove('visible');
     }
     document.getElementById('last-update').textContent = 'Updated ' + t.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
-    document.getElementById('alert-time-1').textContent = t.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
 
     if (chartsReady) updateRealCharts();
 
