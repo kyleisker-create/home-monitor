@@ -525,7 +525,7 @@ function showSection(name) {
 }
 
 // ── SIMULATED DATA (HVAC only) ─────────────────────────────────────────
-const POINTS = 96;
+const POINTS = 2880; // 24h at 30s posting interval (120 readings/hr × 24hr)
 function genHist(base, amp, noise, pts) {
   return Array.from({length: pts}, (_, i) => {
     const t = i / pts;
@@ -682,8 +682,11 @@ async function fetchLatest() {
 
 async function fetchHistory() {
   try {
+    // 30 second interval = 120 readings per hour = 2880 per 24h
+    // Request last 24h using a timestamp filter instead of a row limit
+    const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
     const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/sensor_readings?select=temp_f,humidity,recorded_at&order=recorded_at.asc&limit=96`,
+      `${SUPABASE_URL}/rest/v1/sensor_readings?select=temp_f,humidity,recorded_at&order=recorded_at.asc&recorded_at=gte.${since}&limit=2880`,
       { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } }
     );
     if (!res.ok) return;
@@ -763,16 +766,21 @@ function ds(data, color, label, fill) {
   };
 }
 
+// At 30s interval: 120 readings/hr → 6h=720, 12h=1440, 24h=2880
+function ptsForRange(range) {
+  return range === '6h' ? 720 : range === '12h' ? 1440 : 2880;
+}
+
 function initCharts() {
   if (chartsReady) return;
   chartsReady = true;
-  const pts = 24;
-  const lbls = realLabels.length >= pts ? realLabels.slice(-pts) : makeLabels(pts);
+  const pts = Math.min(ptsForRange('6h'), realLabels.length) || 24;
+  const lbls = realLabels.slice(-pts);
 
   charts.temp  = new Chart(document.getElementById('chart-temp').getContext('2d'),  { type:'line', data:{ labels: lbls, datasets:[ds(realTempHist.slice(-pts),  'rgb(34,211,200)', 'Temp °F',   true)] }, options: chartOpts });
   charts.humid = new Chart(document.getElementById('chart-humid').getContext('2d'), { type:'line', data:{ labels: lbls, datasets:[ds(realHumidHist.slice(-pts), 'rgb(34,211,200)', 'Humidity %',true)] }, options: chartOpts });
   charts.hvac  = new Chart(document.getElementById('chart-hvac').getContext('2d'),  { type:'line', data:{ labels: simLabels.slice(-pts), datasets:[ds(simSupply.slice(-pts),'rgb(61,142,248)','Supply'),ds(simReturn.slice(-pts),'rgb(245,166,35)','Return')] }, options: chartOpts });
-  charts.delta = new Chart(document.getElementById('chart-delta').getContext('2d'), { type:'line', data:{ labels: simLabels.slice(-pts), datasets:[ds(simDelta.slice(-pts),  'rgb(46,204,113)', 'Delta T',   true)] }, options: chartOpts });
+  charts.delta = new Chart(document.getElementById('chart-delta').getContext('2d'), { type:'line', data:{ labels: simLabels.slice(-pts), datasets:[ds(simDelta.slice(-pts),  'rgb(46,204,113)', 'Delta T', true)] }, options: chartOpts });
 }
 
 function updateRealCharts() {
@@ -789,7 +797,7 @@ function updateRealCharts() {
 function setRange(btn, range, key) {
   btn.parentElement.querySelectorAll('.range-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
-  const pts = range === '6h' ? 24 : range === '12h' ? 48 : 96;
+  const pts = Math.min(ptsForRange(range), realLabels.length) || ptsForRange(range);
   if (key === 'temp') {
     charts.temp.data.labels = realLabels.slice(-pts);
     charts.temp.data.datasets[0].data = realTempHist.slice(-pts);
