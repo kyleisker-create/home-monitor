@@ -36,11 +36,8 @@
     --radius:       14px;
     --radius-sm:    8px;
   }
-
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
   html { font-size: 16px; }
-
   body {
     background: var(--bg-base);
     color: var(--text-primary);
@@ -48,741 +45,450 @@
     min-height: 100vh;
     overflow-x: hidden;
   }
-
-  /* Grid background pattern */
   body::before {
     content: '';
-    position: fixed;
-    inset: 0;
+    position: fixed; inset: 0;
     background-image:
       linear-gradient(rgba(61,142,248,0.03) 1px, transparent 1px),
       linear-gradient(90deg, rgba(61,142,248,0.03) 1px, transparent 1px);
     background-size: 40px 40px;
-    pointer-events: none;
-    z-index: 0;
+    pointer-events: none; z-index: 0;
   }
-
-  /* ── HEADER ── */
   header {
-    position: sticky;
-    top: 0;
-    z-index: 100;
+    position: sticky; top: 0; z-index: 100;
     background: rgba(8,13,26,0.85);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
     border-bottom: 1px solid var(--border);
-    padding: 0 24px;
-    height: 60px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
+    padding: 0 20px; height: 60px;
+    display: flex; align-items: center; justify-content: space-between;
   }
-
-  .header-left {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-
+  .header-left { display: flex; align-items: center; gap: 12px; }
   .logo-mark {
-    width: 32px;
-    height: 32px;
-    border-radius: 8px;
+    width: 32px; height: 32px; border-radius: 8px;
     background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
   }
-
   .logo-mark svg { width: 18px; height: 18px; }
-
-  .app-title {
-    font-family: var(--font-display);
-    font-size: 17px;
-    font-weight: 700;
-    letter-spacing: 0.02em;
-    color: var(--text-primary);
-  }
-
-  .header-right {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-  }
-
+  .app-title { font-size: 17px; font-weight: 700; letter-spacing: 0.02em; }
+  .header-right { display: flex; align-items: center; gap: 12px; }
   .status-pill {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-family: var(--font-mono);
-    font-size: 11px;
-    color: var(--text-secondary);
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    padding: 5px 12px;
+    display: flex; align-items: center; gap: 6px;
+    font-family: var(--font-mono); font-size: 11px; color: var(--text-secondary);
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 20px; padding: 5px 12px;
   }
-
   .status-dot {
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
-    background: var(--ok);
-    box-shadow: 0 0 6px var(--ok);
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--ok); box-shadow: 0 0 6px var(--ok);
     animation: pulse-dot 2s ease-in-out infinite;
   }
-
-  .status-dot.warn { background: var(--warn); box-shadow: 0 0 6px var(--warn); }
-  .status-dot.danger { background: var(--danger); box-shadow: 0 0 6px var(--danger); }
-
-  @keyframes pulse-dot {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.5; }
-  }
-
-  .last-update {
-    font-family: var(--font-mono);
-    font-size: 11px;
-    color: var(--text-dim);
-  }
-
-  /* ── MAIN LAYOUT ── */
+  .status-dot.warn   { background: var(--warn);   box-shadow: 0 0 6px var(--warn); }
+  .status-dot.danger { background: var(--danger);  box-shadow: 0 0 6px var(--danger); }
+  @keyframes pulse-dot { 0%,100%{opacity:1} 50%{opacity:0.5} }
+  .last-update { font-family: var(--font-mono); font-size: 11px; color: var(--text-dim); }
+  .section { display: none; }
+  .section.active { display: block; }
   main {
-    position: relative;
-    z-index: 1;
-    max-width: 1100px;
-    margin: 0 auto;
-    padding: 28px 20px 60px;
+    position: relative; z-index: 1;
+    max-width: 1100px; margin: 0 auto;
+    padding: 24px 16px 80px;
   }
-
-  /* ── SECTION LABEL ── */
   .section-label {
-    font-family: var(--font-mono);
-    font-size: 10px;
-    font-weight: 500;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    color: var(--text-dim);
-    margin-bottom: 14px;
-    padding-left: 2px;
+    font-family: var(--font-mono); font-size: 10px; font-weight: 500;
+    letter-spacing: 0.15em; text-transform: uppercase;
+    color: var(--text-dim); margin-bottom: 14px; padding-left: 2px;
   }
-
-  /* ── ALERT BANNER ── */
   .alert-banner {
-    display: none;
-    align-items: center;
-    gap: 12px;
-    background: rgba(240,64,64,0.1);
-    border: 1px solid rgba(240,64,64,0.3);
-    border-radius: var(--radius-sm);
-    padding: 12px 16px;
-    margin-bottom: 24px;
-    font-size: 13px;
-    color: #ff8080;
-    animation: slide-in 0.3s ease;
+    display: none; align-items: center; gap: 12px;
+    background: rgba(240,64,64,0.1); border: 1px solid rgba(240,64,64,0.3);
+    border-radius: var(--radius-sm); padding: 12px 16px; margin-bottom: 20px;
+    font-size: 13px; color: #ff8080;
   }
-
   .alert-banner.visible { display: flex; }
-
-  .alert-icon {
-    width: 18px;
-    height: 18px;
-    flex-shrink: 0;
-  }
-
-  @keyframes slide-in {
-    from { opacity: 0; transform: translateY(-8px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
-
-  /* ── SENSOR GRID ── */
   .sensor-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 14px;
-    margin-bottom: 32px;
+    gap: 14px; margin-bottom: 28px;
   }
-
   .sensor-card {
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 20px;
-    position: relative;
-    overflow: hidden;
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 20px;
+    position: relative; overflow: hidden;
     transition: border-color 0.2s, background 0.2s;
-    cursor: default;
   }
-
-  .sensor-card:hover {
-    background: var(--bg-card-hover);
-    border-color: var(--border-accent);
-  }
-
+  .sensor-card:hover { background: var(--bg-card-hover); border-color: var(--border-accent); }
   .sensor-card::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 2px;
-    background: var(--card-accent, var(--accent-blue));
-    opacity: 0.7;
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: var(--card-accent, var(--accent-blue)); opacity: 0.7;
   }
-
-  .sensor-card.status-warn { --card-accent: var(--warn); }
-  .sensor-card.status-ok   { --card-accent: var(--ok); }
-  .sensor-card.status-danger { --card-accent: var(--danger); border-color: rgba(240,64,64,0.25); }
-
+  .sensor-card.real-data  { --card-accent: var(--accent-cyan); }
+  .sensor-card.status-ok  { --card-accent: var(--ok); }
+  .sensor-card.status-warn{ --card-accent: var(--warn); }
   .card-header {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    margin-bottom: 16px;
+    display: flex; align-items: flex-start;
+    justify-content: space-between; margin-bottom: 14px;
   }
-
   .card-label {
-    font-family: var(--font-mono);
-    font-size: 10px;
-    font-weight: 500;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--text-secondary);
+    font-family: var(--font-mono); font-size: 10px; font-weight: 500;
+    letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-secondary);
   }
-
+  .card-badges { display: flex; gap: 5px; flex-wrap: wrap; justify-content: flex-end; }
   .card-badge {
-    font-family: var(--font-mono);
-    font-size: 9px;
-    font-weight: 500;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    padding: 3px 8px;
-    border-radius: 4px;
-    background: rgba(46,204,113,0.12);
-    color: var(--ok);
-    border: 1px solid rgba(46,204,113,0.2);
+    font-family: var(--font-mono); font-size: 9px; font-weight: 500;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    padding: 3px 8px; border-radius: 4px;
+    background: rgba(46,204,113,0.12); color: var(--ok); border: 1px solid rgba(46,204,113,0.2);
   }
-
-  .card-badge.warn {
-    background: rgba(245,166,35,0.12);
-    color: var(--warn);
-    border-color: rgba(245,166,35,0.2);
-  }
-
-  .card-badge.danger {
-    background: rgba(240,64,64,0.12);
-    color: var(--danger);
-    border-color: rgba(240,64,64,0.2);
-  }
-
+  .card-badge.warn   { background: rgba(245,166,35,0.12);  color: var(--warn);        border-color: rgba(245,166,35,0.2); }
+  .card-badge.danger { background: rgba(240,64,64,0.12);   color: var(--danger);      border-color: rgba(240,64,64,0.2); }
+  .card-badge.real   { background: rgba(34,211,200,0.12);  color: var(--accent-cyan); border-color: rgba(34,211,200,0.2); }
+  .card-badge.sim    { background: rgba(245,166,35,0.08);  color: var(--accent-amber);border-color: rgba(245,166,35,0.15); }
   .card-value {
-    font-family: var(--font-mono);
-    font-size: 36px;
-    font-weight: 300;
-    line-height: 1;
-    color: var(--text-primary);
-    letter-spacing: -0.02em;
-    margin-bottom: 4px;
+    font-family: var(--font-mono); font-size: 36px; font-weight: 300;
+    line-height: 1; letter-spacing: -0.02em; margin-bottom: 4px;
   }
-
-  .card-value .unit {
-    font-size: 16px;
-    color: var(--text-secondary);
-    font-weight: 400;
-    margin-left: 2px;
+  .card-value .unit { font-size: 16px; color: var(--text-secondary); font-weight: 400; margin-left: 2px; }
+  .card-sub { font-family: var(--font-mono); font-size: 11px; color: var(--text-dim); margin-top: 8px; }
+  .spark { margin-top: 14px; height: 32px; width: 100%; }
+  .data-legend {
+    display: flex; gap: 16px; margin-bottom: 16px; flex-wrap: wrap;
   }
-
-  .card-sub {
-    font-family: var(--font-mono);
-    font-size: 11px;
-    color: var(--text-dim);
-    margin-top: 8px;
+  .legend-item {
+    display: flex; align-items: center; gap: 6px;
+    font-family: var(--font-mono); font-size: 10px; color: var(--text-secondary);
   }
-
-  /* Spark line */
-  .spark {
-    margin-top: 14px;
-    height: 32px;
-    width: 100%;
-  }
-
-  /* ── CHART SECTION ── */
+  .legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+  .legend-dot.real  { background: var(--accent-cyan); box-shadow: 0 0 4px var(--accent-cyan); }
+  .legend-dot.sim   { background: var(--accent-amber); }
   .charts-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 14px;
-    margin-bottom: 32px;
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 14px; margin-bottom: 28px;
   }
-
-  @media (max-width: 680px) {
-    .charts-grid { grid-template-columns: 1fr; }
-  }
-
+  @media (max-width: 680px) { .charts-grid { grid-template-columns: 1fr; } }
   .chart-card {
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 20px;
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 20px;
   }
-
   .chart-title {
-    font-family: var(--font-display);
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--text-secondary);
-    margin-bottom: 16px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
+    font-size: 13px; font-weight: 600; color: var(--text-secondary);
+    margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between;
   }
-
-  .chart-range {
-    font-family: var(--font-mono);
-    font-size: 10px;
-    color: var(--text-dim);
-    display: flex;
-    gap: 8px;
-  }
-
   .range-btn {
-    background: none;
-    border: none;
-    color: var(--text-dim);
-    font-family: var(--font-mono);
-    font-size: 10px;
-    cursor: pointer;
-    padding: 2px 6px;
-    border-radius: 4px;
-    transition: all 0.15s;
+    background: none; border: none; color: var(--text-dim);
+    font-family: var(--font-mono); font-size: 10px;
+    cursor: pointer; padding: 2px 6px; border-radius: 4px; transition: all 0.15s;
   }
-
-  .range-btn.active, .range-btn:hover {
-    background: var(--bg-panel);
-    color: var(--accent-blue);
-  }
-
-  .chart-canvas-wrap {
-    position: relative;
-    height: 140px;
-  }
-
-  /* ── HVAC PANEL ── */
-  .hvac-panel {
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 20px;
-    margin-bottom: 32px;
-  }
-
-  .hvac-inner {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 14px;
-    margin-top: 16px;
-  }
-
-  @media (max-width: 500px) {
-    .hvac-inner { grid-template-columns: 1fr; }
-  }
-
-  .hvac-metric {
-    background: var(--bg-panel);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    padding: 16px;
-    text-align: center;
-  }
-
-  .hvac-metric-label {
-    font-family: var(--font-mono);
-    font-size: 9px;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--text-dim);
-    margin-bottom: 8px;
-  }
-
-  .hvac-metric-value {
-    font-family: var(--font-mono);
-    font-size: 28px;
-    font-weight: 300;
-    color: var(--text-primary);
-    letter-spacing: -0.02em;
-  }
-
-  .hvac-metric-value .unit {
-    font-size: 13px;
-    color: var(--text-secondary);
-  }
-
-  .delta-badge {
-    display: inline-block;
-    margin-top: 6px;
-    font-family: var(--font-mono);
-    font-size: 10px;
-    padding: 2px 8px;
-    border-radius: 4px;
-  }
-
-  .delta-badge.good {
-    background: rgba(61,142,248,0.12);
-    color: var(--accent-blue);
-    border: 1px solid rgba(61,142,248,0.2);
-  }
-
-  .delta-badge.low {
-    background: rgba(245,166,35,0.12);
-    color: var(--warn);
-    border: 1px solid rgba(245,166,35,0.2);
-  }
-
-  /* ── ALERTS TABLE ── */
+  .range-btn.active, .range-btn:hover { background: var(--bg-panel); color: var(--accent-blue); }
+  .chart-canvas-wrap { position: relative; height: 140px; }
   .alerts-panel {
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 20px;
-    margin-bottom: 32px;
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 20px; margin-bottom: 28px;
   }
-
-  .alerts-list { margin-top: 14px; }
-
   .alert-row {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 10px 0;
-    border-bottom: 1px solid var(--border);
-    font-size: 13px;
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 13px;
   }
-
   .alert-row:last-child { border-bottom: none; }
-
-  .alert-time {
-    font-family: var(--font-mono);
-    font-size: 10px;
-    color: var(--text-dim);
-    min-width: 80px;
-  }
-
+  .alert-time { font-family: var(--font-mono); font-size: 10px; color: var(--text-dim); min-width: 80px; }
   .alert-type {
-    font-family: var(--font-mono);
-    font-size: 10px;
-    padding: 2px 8px;
-    border-radius: 4px;
-    min-width: 70px;
-    text-align: center;
+    font-family: var(--font-mono); font-size: 10px;
+    padding: 2px 8px; border-radius: 4px; min-width: 60px; text-align: center;
   }
-
-  .alert-type.info {
-    background: rgba(61,142,248,0.1);
-    color: var(--accent-blue);
-    border: 1px solid rgba(61,142,248,0.2);
-  }
-
-  .alert-type.warn {
-    background: rgba(245,166,35,0.1);
-    color: var(--warn);
-    border: 1px solid rgba(245,166,35,0.2);
-  }
-
+  .alert-type.info { background: rgba(61,142,248,0.1); color: var(--accent-blue); border: 1px solid rgba(61,142,248,0.2); }
+  .alert-type.warn { background: rgba(245,166,35,0.1);  color: var(--warn);        border: 1px solid rgba(245,166,35,0.2); }
   .alert-msg { color: var(--text-secondary); flex: 1; }
-
-  /* ── FOOTER ── */
-  footer {
-    position: relative;
-    z-index: 1;
-    text-align: center;
-    padding: 24px;
-    font-family: var(--font-mono);
-    font-size: 10px;
-    color: var(--text-dim);
-    border-top: 1px solid var(--border);
-    letter-spacing: 0.08em;
+  .settings-panel {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 20px; margin-bottom: 28px;
   }
-
-  /* ── MOBILE NAV ── */
+  .settings-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(220px,1fr));
+    gap: 14px; margin-bottom: 16px;
+  }
+  .settings-field { display: flex; flex-direction: column; gap: 6px; }
+  .settings-label {
+    font-family: var(--font-mono); font-size: 10px; color: var(--text-dim);
+    letter-spacing: 0.1em; text-transform: uppercase;
+  }
+  .settings-input {
+    background: var(--bg-panel); border: 1px solid var(--border-accent);
+    border-radius: var(--radius-sm); padding: 8px 12px;
+    color: var(--text-primary); font-family: var(--font-mono); font-size: 14px; outline: none;
+  }
+  .settings-input:focus { border-color: var(--accent-blue); }
+  .btn-primary {
+    background: var(--accent-blue); color: #fff; border: none;
+    border-radius: var(--radius-sm); padding: 10px 24px;
+    font-family: var(--font-display); font-size: 13px; font-weight: 600;
+    cursor: pointer; transition: opacity 0.15s;
+  }
+  .btn-primary:hover { opacity: 0.85; }
+  .saved-msg {
+    font-family: var(--font-mono); font-size: 11px; color: var(--ok);
+    margin-left: 12px; opacity: 0; transition: opacity 0.3s;
+  }
+  .settings-info {
+    font-family: var(--font-mono); font-size: 11px; color: var(--text-dim); line-height: 2;
+  }
   .mobile-nav {
-    display: none;
-    position: fixed;
-    bottom: 0; left: 0; right: 0;
-    z-index: 200;
+    display: flex; position: fixed;
+    bottom: 0; left: 0; right: 0; z-index: 200;
     background: rgba(8,13,26,0.95);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
     border-top: 1px solid var(--border);
     padding: 8px 0 env(safe-area-inset-bottom);
-    flex-direction: row;
-    justify-content: space-around;
+    flex-direction: row; justify-content: space-around;
   }
-
-  @media (max-width: 600px) {
-    .mobile-nav { display: flex; }
-    main { padding-bottom: 80px; }
-    .last-update { display: none; }
-  }
-
   .nav-btn {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-    background: none;
-    border: none;
-    color: var(--text-dim);
-    font-family: var(--font-mono);
-    font-size: 9px;
-    letter-spacing: 0.08em;
-    cursor: pointer;
-    padding: 6px 16px;
-    transition: color 0.15s;
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+    background: none; border: none; color: var(--text-dim);
+    font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.08em;
+    cursor: pointer; padding: 6px 16px; transition: color 0.15s;
   }
-
   .nav-btn.active, .nav-btn:hover { color: var(--accent-blue); }
-
   .nav-btn svg { width: 20px; height: 20px; }
-
-  /* Simulated data badge */
-  .sim-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    font-family: var(--font-mono);
-    font-size: 9px;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--accent-amber);
-    background: rgba(245,166,35,0.08);
-    border: 1px solid rgba(245,166,35,0.18);
-    border-radius: 4px;
-    padding: 3px 8px;
-    margin-left: 8px;
+  footer {
+    position: relative; z-index: 1; text-align: center; padding: 20px;
+    font-family: var(--font-mono); font-size: 10px; color: var(--text-dim);
+    border-top: 1px solid var(--border); letter-spacing: 0.08em;
   }
 </style>
 </head>
 <body>
 
-<!-- HEADER -->
 <header>
   <div class="header-left">
     <div class="logo-mark">
-      <svg viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <svg viewBox="0 0 18 18" fill="none">
         <path d="M9 2L3 5.5V9C3 12.3 5.6 15.4 9 16C12.4 15.4 15 12.3 15 9V5.5L9 2Z" stroke="white" stroke-width="1.5" stroke-linejoin="round"/>
         <path d="M6.5 9L8 10.5L11.5 7" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
     </div>
     <span class="app-title">Home Monitor</span>
-    <span class="sim-badge">&#9632; simulated</span>
   </div>
   <div class="header-right">
     <div class="status-pill">
       <div class="status-dot" id="status-dot"></div>
-      <span id="status-text">All clear</span>
+      <span id="status-text">Connecting...</span>
     </div>
-    <span class="last-update" id="last-update">Updated just now</span>
+    <span class="last-update" id="last-update"></span>
   </div>
 </header>
 
 <main>
 
-  <!-- ALERT BANNER -->
-  <div class="alert-banner" id="alert-banner">
-    <svg class="alert-icon" viewBox="0 0 18 18" fill="none">
-      <path d="M9 2L1 15h16L9 2z" stroke="#f04040" stroke-width="1.5" stroke-linejoin="round"/>
-      <path d="M9 7v4M9 12.5v.5" stroke="#f04040" stroke-width="1.5" stroke-linecap="round"/>
-    </svg>
-    <span id="alert-banner-text"></span>
-  </div>
-
-  <!-- SENSOR CARDS -->
-  <div class="section-label">Live readings</div>
-  <div class="sensor-grid" id="sensor-grid">
-
-    <!-- Indoor Temp -->
-    <div class="sensor-card status-ok" id="card-temp">
-      <div class="card-header">
-        <span class="card-label">Indoor temp</span>
-        <span class="card-badge" id="badge-temp">Normal</span>
-      </div>
-      <div class="card-value" id="val-temp">72<span class="unit">°F</span></div>
-      <div class="card-sub" id="sub-temp">Range today: 70 – 74°F</div>
-      <svg class="spark" id="spark-temp" viewBox="0 0 180 32" preserveAspectRatio="none"></svg>
+  <!-- LIVE -->
+  <div class="section active" id="section-live">
+    <div class="alert-banner" id="alert-banner">
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+        <path d="M9 2L1 15h16L9 2z" stroke="#f04040" stroke-width="1.5" stroke-linejoin="round"/>
+        <path d="M9 7v4M9 12.5v.5" stroke="#f04040" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+      <span id="alert-banner-text"></span>
     </div>
-
-    <!-- Humidity -->
-    <div class="sensor-card status-ok" id="card-humid">
-      <div class="card-header">
-        <span class="card-label">Humidity</span>
-        <span class="card-badge" id="badge-humid">Normal</span>
-      </div>
-      <div class="card-value" id="val-humid">48<span class="unit">%</span></div>
-      <div class="card-sub" id="sub-humid">Comfort range: 40–60%</div>
-      <svg class="spark" id="spark-humid" viewBox="0 0 180 32" preserveAspectRatio="none"></svg>
+    <div class="data-legend">
+      <div class="legend-item"><div class="legend-dot real"></div>Live sensor data</div>
+      <div class="legend-item"><div class="legend-dot sim"></div>Simulated (not yet wired)</div>
     </div>
+    <div class="section-label">Live readings</div>
+    <div class="sensor-grid">
 
-    <!-- Leak Detection -->
-    <div class="sensor-card status-ok" id="card-leak">
-      <div class="card-header">
-        <span class="card-label">Leak detection</span>
-        <span class="card-badge" id="badge-leak">Dry</span>
+      <div class="sensor-card real-data" id="card-temp">
+        <div class="card-header">
+          <span class="card-label">Indoor temp</span>
+          <div class="card-badges">
+            <span class="card-badge real">Live</span>
+            <span class="card-badge" id="badge-temp">--</span>
+          </div>
+        </div>
+        <div class="card-value" id="val-temp">--<span class="unit">°F</span></div>
+        <div class="card-sub">DHT22 sensor</div>
+        <svg class="spark" id="spark-temp" viewBox="0 0 180 32" preserveAspectRatio="none"></svg>
       </div>
-      <div class="card-value" id="val-leak" style="font-size:24px;padding-top:4px">No leak</div>
-      <div class="card-sub" id="sub-leak">3 sensors active</div>
-      <div style="margin-top:14px;display:flex;gap:8px" id="leak-sensors">
-        <span style="font-family:var(--font-mono);font-size:10px;padding:4px 10px;border-radius:4px;background:rgba(46,204,113,0.1);color:var(--ok);border:1px solid rgba(46,204,113,0.2)">Kitchen</span>
-        <span style="font-family:var(--font-mono);font-size:10px;padding:4px 10px;border-radius:4px;background:rgba(46,204,113,0.1);color:var(--ok);border:1px solid rgba(46,204,113,0.2)">Basement</span>
-        <span style="font-family:var(--font-mono);font-size:10px;padding:4px 10px;border-radius:4px;background:rgba(46,204,113,0.1);color:var(--ok);border:1px solid rgba(46,204,113,0.2)">Utility</span>
+
+      <div class="sensor-card real-data" id="card-humid">
+        <div class="card-header">
+          <span class="card-label">Humidity</span>
+          <div class="card-badges">
+            <span class="card-badge real">Live</span>
+            <span class="card-badge" id="badge-humid">--</span>
+          </div>
+        </div>
+        <div class="card-value" id="val-humid">--<span class="unit">%</span></div>
+        <div class="card-sub">Comfort range: 30–50% (CO)</div>
+        <svg class="spark" id="spark-humid" viewBox="0 0 180 32" preserveAspectRatio="none"></svg>
       </div>
-    </div>
 
-    <!-- HVAC Supply -->
-    <div class="sensor-card status-ok" id="card-supply">
-      <div class="card-header">
-        <span class="card-label">HVAC supply</span>
-        <span class="card-badge" id="badge-supply">Normal</span>
-      </div>
-      <div class="card-value" id="val-supply">58<span class="unit">°F</span></div>
-      <div class="card-sub">Air leaving unit</div>
-      <svg class="spark" id="spark-supply" viewBox="0 0 180 32" preserveAspectRatio="none"></svg>
-    </div>
-
-    <!-- HVAC Return -->
-    <div class="sensor-card status-ok" id="card-return">
-      <div class="card-header">
-        <span class="card-label">HVAC return</span>
-        <span class="card-badge" id="badge-return">Normal</span>
-      </div>
-      <div class="card-value" id="val-return">72<span class="unit">°F</span></div>
-      <div class="card-sub">Air entering unit</div>
-      <svg class="spark" id="spark-return" viewBox="0 0 180 32" preserveAspectRatio="none"></svg>
-    </div>
-
-    <!-- Delta T -->
-    <div class="sensor-card status-ok" id="card-delta">
-      <div class="card-header">
-        <span class="card-label">Delta T</span>
-        <span class="card-badge" id="badge-delta">Good</span>
-      </div>
-      <div class="card-value" id="val-delta">14<span class="unit">°F</span></div>
-      <div class="card-sub">Return minus supply temp</div>
-      <div style="margin-top:10px;font-family:var(--font-mono);font-size:10px;color:var(--text-dim)">Ideal range: 14–22°F</div>
-    </div>
-
-  </div>
-
-  <!-- CHARTS -->
-  <div class="section-label">24-hour history</div>
-  <div class="charts-grid">
-    <div class="chart-card">
-      <div class="chart-title">
-        Indoor temperature
-        <div class="chart-range">
-          <button class="range-btn active" onclick="setRange(this,'6h')">6h</button>
-          <button class="range-btn" onclick="setRange(this,'12h')">12h</button>
-          <button class="range-btn" onclick="setRange(this,'24h')">24h</button>
+      <div class="sensor-card status-ok" id="card-leak">
+        <div class="card-header">
+          <span class="card-label">Leak detection</span>
+          <div class="card-badges">
+            <span class="card-badge sim">Simulated</span>
+            <span class="card-badge">Dry</span>
+          </div>
+        </div>
+        <div class="card-value" style="font-size:22px;padding-top:6px">No leak</div>
+        <div class="card-sub">3 sensors — not yet wired</div>
+        <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap">
+          <span style="font-family:var(--font-mono);font-size:10px;padding:4px 10px;border-radius:4px;background:rgba(46,204,113,0.1);color:var(--ok);border:1px solid rgba(46,204,113,0.2)">Kitchen</span>
+          <span style="font-family:var(--font-mono);font-size:10px;padding:4px 10px;border-radius:4px;background:rgba(46,204,113,0.1);color:var(--ok);border:1px solid rgba(46,204,113,0.2)">Basement</span>
+          <span style="font-family:var(--font-mono);font-size:10px;padding:4px 10px;border-radius:4px;background:rgba(46,204,113,0.1);color:var(--ok);border:1px solid rgba(46,204,113,0.2)">Utility</span>
         </div>
       </div>
-      <div class="chart-canvas-wrap">
-        <canvas id="chart-temp"></canvas>
-      </div>
-    </div>
-    <div class="chart-card">
-      <div class="chart-title">
-        Humidity
-        <div class="chart-range">
-          <button class="range-btn active" onclick="setRange(this,'6h','humid')">6h</button>
-          <button class="range-btn" onclick="setRange(this,'12h','humid')">12h</button>
-          <button class="range-btn" onclick="setRange(this,'24h','humid')">24h</button>
+
+      <div class="sensor-card status-ok" id="card-supply">
+        <div class="card-header">
+          <span class="card-label">HVAC supply</span>
+          <div class="card-badges">
+            <span class="card-badge sim">Simulated</span>
+            <span class="card-badge" id="badge-supply">Normal</span>
+          </div>
         </div>
+        <div class="card-value" id="val-supply">--<span class="unit">°F</span></div>
+        <div class="card-sub">Air leaving unit</div>
+        <svg class="spark" id="spark-supply" viewBox="0 0 180 32" preserveAspectRatio="none"></svg>
       </div>
-      <div class="chart-canvas-wrap">
-        <canvas id="chart-humid"></canvas>
-      </div>
-    </div>
-    <div class="chart-card">
-      <div class="chart-title">
-        HVAC supply vs return
-        <div class="chart-range">
-          <button class="range-btn active" onclick="setRange(this,'6h','hvac')">6h</button>
-          <button class="range-btn" onclick="setRange(this,'12h','hvac')">12h</button>
-          <button class="range-btn" onclick="setRange(this,'24h','hvac')">24h</button>
+
+      <div class="sensor-card status-ok" id="card-return">
+        <div class="card-header">
+          <span class="card-label">HVAC return</span>
+          <div class="card-badges">
+            <span class="card-badge sim">Simulated</span>
+            <span class="card-badge" id="badge-return">Normal</span>
+          </div>
         </div>
+        <div class="card-value" id="val-return">--<span class="unit">°F</span></div>
+        <div class="card-sub">Air entering unit</div>
+        <svg class="spark" id="spark-return" viewBox="0 0 180 32" preserveAspectRatio="none"></svg>
       </div>
-      <div class="chart-canvas-wrap">
-        <canvas id="chart-hvac"></canvas>
+
+      <div class="sensor-card status-ok" id="card-delta">
+        <div class="card-header">
+          <span class="card-label">Delta T</span>
+          <div class="card-badges">
+            <span class="card-badge sim">Simulated</span>
+            <span class="card-badge" id="badge-delta">Good</span>
+          </div>
+        </div>
+        <div class="card-value" id="val-delta">--<span class="unit">°F</span></div>
+        <div class="card-sub">Return minus supply</div>
+        <div style="margin-top:10px;font-family:var(--font-mono);font-size:10px;color:var(--text-dim)">Ideal: 14–22°F</div>
       </div>
-    </div>
-    <div class="chart-card">
-      <div class="chart-title">Delta T over time</div>
-      <div class="chart-canvas-wrap">
-        <canvas id="chart-delta"></canvas>
-      </div>
+
     </div>
   </div>
 
-  <!-- ALERTS LOG -->
-  <div class="section-label">Recent alerts</div>
-  <div class="alerts-panel">
-    <div class="alerts-list" id="alerts-list">
+  <!-- HISTORY -->
+  <div class="section" id="section-history">
+    <div class="section-label">24-hour history</div>
+    <div class="charts-grid">
+      <div class="chart-card">
+        <div class="chart-title">
+          Indoor temp (live)
+          <div style="display:flex;gap:4px">
+            <button class="range-btn active" onclick="setRange(this,'6h','temp')">6h</button>
+            <button class="range-btn" onclick="setRange(this,'12h','temp')">12h</button>
+            <button class="range-btn" onclick="setRange(this,'24h','temp')">24h</button>
+          </div>
+        </div>
+        <div class="chart-canvas-wrap"><canvas id="chart-temp"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">
+          Humidity (live)
+          <div style="display:flex;gap:4px">
+            <button class="range-btn active" onclick="setRange(this,'6h','humid')">6h</button>
+            <button class="range-btn" onclick="setRange(this,'12h','humid')">12h</button>
+            <button class="range-btn" onclick="setRange(this,'24h','humid')">24h</button>
+          </div>
+        </div>
+        <div class="chart-canvas-wrap"><canvas id="chart-humid"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">
+          HVAC supply vs return (simulated)
+          <div style="display:flex;gap:4px">
+            <button class="range-btn active" onclick="setRange(this,'6h','hvac')">6h</button>
+            <button class="range-btn" onclick="setRange(this,'12h','hvac')">12h</button>
+            <button class="range-btn" onclick="setRange(this,'24h','hvac')">24h</button>
+          </div>
+        </div>
+        <div class="chart-canvas-wrap"><canvas id="chart-hvac"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Delta T (simulated)</div>
+        <div class="chart-canvas-wrap"><canvas id="chart-delta"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ALERTS -->
+  <div class="section" id="section-alerts">
+    <div class="section-label">Recent alerts</div>
+    <div class="alerts-panel">
       <div class="alert-row">
-        <span class="alert-time">Today 06:14</span>
+        <span class="alert-time" id="alert-time-1">--</span>
         <span class="alert-type info">Info</span>
-        <span class="alert-msg">HVAC system started — morning cycle</span>
+        <span class="alert-msg">Latest reading received from DHT22</span>
       </div>
       <div class="alert-row">
-        <span class="alert-time">Today 02:30</span>
+        <span class="alert-time">Today</span>
+        <span class="alert-type info">Info</span>
+        <span class="alert-msg">DHT22 sensor connected and posting to Supabase</span>
+      </div>
+      <div class="alert-row">
+        <span class="alert-time">Today</span>
         <span class="alert-type warn">Warn</span>
-        <span class="alert-msg">Humidity reached 61% — above comfort threshold</span>
-      </div>
-      <div class="alert-row">
-        <span class="alert-time">Yesterday</span>
-        <span class="alert-type info">Info</span>
-        <span class="alert-msg">All sensors reporting normally</span>
+        <span class="alert-msg">HVAC and leak sensors not yet connected — showing simulated data</span>
       </div>
     </div>
   </div>
 
-  <!-- THRESHOLDS -->
-  <div class="section-label">Alert thresholds</div>
-  <div class="alerts-panel">
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;margin-top:4px">
-
-      <div style="display:flex;flex-direction:column;gap:6px">
-        <label style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim);letter-spacing:0.1em;text-transform:uppercase">Indoor temp min (°F)</label>
-        <input type="number" id="thresh-temp-min" value="60" style="background:var(--bg-panel);border:1px solid var(--border-accent);border-radius:var(--radius-sm);padding:8px 12px;color:var(--text-primary);font-family:var(--font-mono);font-size:14px;outline:none">
+  <!-- SETTINGS -->
+  <div class="section" id="section-settings">
+    <div class="section-label">Alert thresholds</div>
+    <div class="settings-panel">
+      <div class="settings-grid">
+        <div class="settings-field">
+          <label class="settings-label">Indoor temp min (°F)</label>
+          <input type="number" class="settings-input" id="thresh-temp-min" value="60">
+        </div>
+        <div class="settings-field">
+          <label class="settings-label">Indoor temp max (°F)</label>
+          <input type="number" class="settings-input" id="thresh-temp-max" value="82">
+        </div>
+        <div class="settings-field">
+          <label class="settings-label">Humidity max (%)</label>
+          <input type="number" class="settings-input" id="thresh-humid-max" value="55">
+        </div>
+        <div class="settings-field">
+          <label class="settings-label">Delta T min (°F)</label>
+          <input type="number" class="settings-input" id="thresh-delta-min" value="12">
+        </div>
       </div>
-
-      <div style="display:flex;flex-direction:column;gap:6px">
-        <label style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim);letter-spacing:0.1em;text-transform:uppercase">Indoor temp max (°F)</label>
-        <input type="number" id="thresh-temp-max" value="82" style="background:var(--bg-panel);border:1px solid var(--border-accent);border-radius:var(--radius-sm);padding:8px 12px;color:var(--text-primary);font-family:var(--font-mono);font-size:14px;outline:none">
-      </div>
-
-      <div style="display:flex;flex-direction:column;gap:6px">
-        <label style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim);letter-spacing:0.1em;text-transform:uppercase">Humidity max (%)</label>
-        <input type="number" id="thresh-humid-max" value="65" style="background:var(--bg-panel);border:1px solid var(--border-accent);border-radius:var(--radius-sm);padding:8px 12px;color:var(--text-primary);font-family:var(--font-mono);font-size:14px;outline:none">
-      </div>
-
-      <div style="display:flex;flex-direction:column;gap:6px">
-        <label style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim);letter-spacing:0.1em;text-transform:uppercase">Delta T min (°F)</label>
-        <input type="number" id="thresh-delta-min" value="12" style="background:var(--bg-panel);border:1px solid var(--border-accent);border-radius:var(--radius-sm);padding:8px 12px;color:var(--text-primary);font-family:var(--font-mono);font-size:14px;outline:none">
-      </div>
-
+      <button class="btn-primary" onclick="saveThresholds()">Save thresholds</button>
+      <span class="saved-msg" id="thresh-saved">Saved</span>
     </div>
-    <div style="margin-top:16px">
-      <button onclick="saveThresholds()" style="background:var(--accent-blue);color:#fff;border:none;border-radius:var(--radius-sm);padding:10px 24px;font-family:var(--font-display);font-size:13px;font-weight:600;cursor:pointer;transition:opacity 0.15s" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">Save thresholds</button>
-      <span id="thresh-saved" style="font-family:var(--font-mono);font-size:11px;color:var(--ok);margin-left:12px;opacity:0;transition:opacity 0.3s">Saved</span>
+
+    <div class="section-label">System info</div>
+    <div class="settings-panel">
+      <div class="settings-info">
+        Sensor: DHT22 on GPIO 4<br>
+        Network: Indestructibles<br>
+        Database: Supabase (PostgreSQL)<br>
+        Refresh interval: 30 seconds<br>
+        Dashboard: GitHub Pages<br>
+        Sensors pending: HVAC temps (DS18B20), Leak sensors
+      </div>
     </div>
   </div>
 
 </main>
 
-<footer>
-  HOME MONITOR &nbsp;&#183;&nbsp; ESP32 SENSOR NETWORK &nbsp;&#183;&nbsp; DATA UPDATES EVERY 30 SECONDS
-</footer>
+<footer>HOME MONITOR &nbsp;&#183;&nbsp; ESP32 SENSOR NETWORK &nbsp;&#183;&nbsp; UPDATES EVERY 30 SECONDS</footer>
 
-<!-- MOBILE NAV -->
 <nav class="mobile-nav">
-  <button class="nav-btn active">
+  <button class="nav-btn active" id="nav-live" onclick="showSection('live')">
     <svg viewBox="0 0 20 20" fill="none">
       <rect x="2" y="2" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.5"/>
       <rect x="11" y="2" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.5"/>
@@ -791,84 +497,171 @@
     </svg>
     Live
   </button>
-  <button class="nav-btn">
+  <button class="nav-btn" id="nav-history" onclick="showSection('history')">
     <svg viewBox="0 0 20 20" fill="none">
       <polyline points="2,14 6,8 10,11 14,5 18,9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
     </svg>
     History
   </button>
-  <button class="nav-btn">
+  <button class="nav-btn" id="nav-alerts" onclick="showSection('alerts')">
     <svg viewBox="0 0 20 20" fill="none">
       <path d="M10 2a6 6 0 016 6c0 3.5-2 6-2 6H6s-2-2.5-2-6a6 6 0 016-6z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
       <path d="M8 14v1a2 2 0 004 0v-1" stroke="currentColor" stroke-width="1.5"/>
     </svg>
     Alerts
   </button>
-  <button class="nav-btn">
+  <button class="nav-btn" id="nav-settings" onclick="showSection('settings')">
     <svg viewBox="0 0 20 20" fill="none">
-      <circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.5"/>
-      <circle cx="10" cy="8" r="2.5" stroke="currentColor" stroke-width="1.5"/>
-      <path d="M4.5 17c0-3 2.5-4.5 5.5-4.5s5.5 1.5 5.5 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      <circle cx="10" cy="10" r="3" stroke="currentColor" stroke-width="1.5"/>
+      <path d="M10 2v2M10 16v2M2 10h2M16 10h2M4.22 4.22l1.42 1.42M14.36 14.36l1.42 1.42M4.22 15.78l1.42-1.42M14.36 5.64l1.42-1.42" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
     </svg>
     Settings
   </button>
 </nav>
 
-<!-- Chart.js -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script>
 
-// ── SIMULATED DATA ENGINE ──────────────────────────────────────────────
+// ── SUPABASE CONFIG ── Replace these two values before uploading ───────
+const SUPABASE_URL = 'https://xwjbokflegewuinkmnvj.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh3amJva2ZsZWdld3VpbmttbnZqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0MjcwMDIsImV4cCI6MjA5MTAwMzAwMn0.u25P-VPHpiJ9BZ9LINtDxjv_wRQA18ao8dEmNgcEUOc';
+// ───────────────────────────────────────────────────────────────────────
 
-// Generate 24h of plausible readings, one per 15 minutes = 96 points
-function generateHistory(base, amplitude, noise, points) {
-  const arr = [];
-  for (let i = 0; i < points; i++) {
-    const t = i / points;
-    // Gentle sinusoidal daily cycle + noise
-    const val = base + amplitude * Math.sin(t * Math.PI * 2 - Math.PI / 2)
-                + (Math.random() - 0.5) * noise;
-    arr.push(Math.round(val * 10) / 10);
-  }
-  return arr;
+function showSection(name) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('section-' + name).classList.add('active');
+  document.getElementById('nav-' + name).classList.add('active');
+  if (name === 'history') initCharts();
 }
 
-const POINTS = 96; // 24h × 4 per hour
-const tempHistory    = generateHistory(72, 3, 1.5, POINTS);
-const humidHistory   = generateHistory(50, 8, 3,   POINTS);
-const supplyHistory  = generateHistory(58, 4, 2,   POINTS);
-const returnHistory  = tempHistory.map(v => v + (Math.random() * 0.5));
-const deltaHistory   = returnHistory.map((r, i) => Math.round((r - supplyHistory[i]) * 10) / 10);
+// ── SIMULATED DATA (HVAC only) ─────────────────────────────────────────
+const POINTS = 96;
+function genHist(base, amp, noise, pts) {
+  return Array.from({length: pts}, (_, i) => {
+    const t = i / pts;
+    return Math.round((base + amp * Math.sin(t * Math.PI * 2 - Math.PI / 2) + (Math.random() - 0.5) * noise) * 10) / 10;
+  });
+}
+const simSupply = genHist(58, 4, 2, POINTS);
+const simReturn = genHist(72, 3, 1, POINTS);
+const simDelta  = simReturn.map((r, i) => Math.round((r - simSupply[i]) * 10) / 10);
 
-// Time labels — last 24 hours
-function makeLabels(points) {
-  const labels = [];
+function makeLabels(pts) {
   const now = new Date();
-  for (let i = points - 1; i >= 0; i--) {
-    const t = new Date(now - i * 15 * 60 * 1000);
-    labels.push(t.getHours().toString().padStart(2,'0') + ':' + t.getMinutes().toString().padStart(2,'0'));
-  }
-  return labels;
+  return Array.from({length: pts}, (_, i) => {
+    const t = new Date(now - (pts - 1 - i) * 15 * 60 * 1000);
+    return t.getHours().toString().padStart(2,'0') + ':' + t.getMinutes().toString().padStart(2,'0');
+  });
 }
-const allLabels = makeLabels(POINTS);
+const simLabels = makeLabels(POINTS);
 
-// "Live" current values (last point + drift)
-let current = {
-  temp:   tempHistory[POINTS - 1],
-  humid:  humidHistory[POINTS - 1],
-  supply: supplyHistory[POINTS - 1],
-  ret:    returnHistory[POINTS - 1],
-  leak:   false
-};
+let simState = { supply: 58, ret: 72 };
+function driftSim() {
+  simState.supply = Math.min(70, Math.max(48, simState.supply + (Math.random() - 0.5) * 0.6));
+  simState.ret    = Math.min(80, Math.max(65, simState.ret    + (Math.random() - 0.5) * 0.4));
+  const delta = Math.round((simState.ret - simState.supply) * 10) / 10;
+  simSupply.push(Math.round(simState.supply * 10) / 10); simSupply.shift();
+  simReturn.push(Math.round(simState.ret    * 10) / 10); simReturn.shift();
+  simDelta.push(delta); simDelta.shift();
+  simLabels.push(new Date().toTimeString().slice(0,5)); simLabels.shift();
+  document.getElementById('val-supply').innerHTML = Math.round(simState.supply) + '<span class="unit">°F</span>';
+  document.getElementById('val-return').innerHTML = Math.round(simState.ret)    + '<span class="unit">°F</span>';
+  document.getElementById('val-delta').innerHTML  = delta + '<span class="unit">°F</span>';
+  drawSpark('spark-supply', simSupply, '#3d8ef8');
+  drawSpark('spark-return', simReturn, '#f5a623');
+}
 
-// ── THRESHOLDS ────────────────────────────────────────────────────────
+// ── REAL DATA ─────────────────────────────────────────────────────────
+const realTempHist  = [];
+const realHumidHist = [];
+const realLabels    = [];
+
+async function fetchLatest() {
+  try {
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/sensor_readings?select=temp_f,humidity,recorded_at&order=recorded_at.desc&limit=1`,
+      { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } }
+    );
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    if (!data.length) return;
+    const row = data[0];
+    const tempF    = parseFloat(row.temp_f);
+    const humidity = parseFloat(row.humidity);
+    const thresh   = getThresholds();
+    const tempWarn  = tempF < thresh.tempMin || tempF > thresh.tempMax;
+    const humidWarn = humidity > thresh.humidMax;
+
+    document.getElementById('val-temp').innerHTML  = Math.round(tempF)    + '<span class="unit">°F</span>';
+    document.getElementById('val-humid').innerHTML = Math.round(humidity)  + '<span class="unit">%</span>';
+
+    setStatus('card-temp',  'badge-temp',  tempWarn,  tempWarn  ? (tempF < thresh.tempMin ? 'Low' : 'High') : 'Normal');
+    setStatus('card-humid', 'badge-humid', humidWarn, humidWarn ? 'High' : 'Normal');
+
+    const t = new Date(row.recorded_at);
+    const lbl = t.getHours().toString().padStart(2,'0') + ':' + t.getMinutes().toString().padStart(2,'0');
+    realTempHist.push(tempF);   if (realTempHist.length  > POINTS) realTempHist.shift();
+    realHumidHist.push(humidity); if (realHumidHist.length > POINTS) realHumidHist.shift();
+    realLabels.push(lbl);       if (realLabels.length    > POINTS) realLabels.shift();
+
+    drawSpark('spark-temp',  realTempHist,  '#22d3c8');
+    drawSpark('spark-humid', realHumidHist, '#22d3c8');
+
+    const dot = document.getElementById('status-dot');
+    const txt = document.getElementById('status-text');
+    if (tempWarn || humidWarn) {
+      dot.className = 'status-dot warn'; txt.textContent = 'Warning';
+      document.getElementById('alert-banner').classList.add('visible');
+      document.getElementById('alert-banner-text').textContent =
+        tempWarn ? `Temperature is ${tempF < thresh.tempMin ? 'below' : 'above'} threshold` : 'Humidity above threshold';
+    } else {
+      dot.className = 'status-dot'; txt.textContent = 'All clear';
+      document.getElementById('alert-banner').classList.remove('visible');
+    }
+    document.getElementById('last-update').textContent = 'Updated ' + t.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+    document.getElementById('alert-time-1').textContent = t.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+
+    if (chartsReady) updateRealCharts();
+
+  } catch(e) {
+    console.error('Supabase error:', e);
+    document.getElementById('status-dot').className = 'status-dot warn';
+    document.getElementById('status-text').textContent = 'Connection error';
+  }
+}
+
+async function fetchHistory() {
+  try {
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/sensor_readings?select=temp_f,humidity,recorded_at&order=recorded_at.asc&limit=96`,
+      { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } }
+    );
+    if (!res.ok) return;
+    const data = await res.json();
+    data.forEach(row => {
+      realTempHist.push(parseFloat(row.temp_f));
+      realHumidHist.push(parseFloat(row.humidity));
+      const t = new Date(row.recorded_at);
+      realLabels.push(t.getHours().toString().padStart(2,'0') + ':' + t.getMinutes().toString().padStart(2,'0'));
+    });
+    drawSpark('spark-temp',  realTempHist,  '#22d3c8');
+    drawSpark('spark-humid', realHumidHist, '#22d3c8');
+  } catch(e) { console.error('History error:', e); }
+}
+
+function setStatus(cardId, badgeId, isWarn, label) {
+  const badge = document.getElementById(badgeId);
+  badge.className = 'card-badge' + (isWarn ? ' warn' : '');
+  badge.textContent = label;
+}
 
 function getThresholds() {
   return {
-    tempMin:   parseFloat(document.getElementById('thresh-temp-min').value)  || 60,
-    tempMax:   parseFloat(document.getElementById('thresh-temp-max').value)  || 82,
-    humidMax:  parseFloat(document.getElementById('thresh-humid-max').value) || 65,
-    deltaMin:  parseFloat(document.getElementById('thresh-delta-min').value) || 12,
+    tempMin:  parseFloat(document.getElementById('thresh-temp-min').value)  || 60,
+    tempMax:  parseFloat(document.getElementById('thresh-temp-max').value)  || 82,
+    humidMax: parseFloat(document.getElementById('thresh-humid-max').value) || 55,
+    deltaMin: parseFloat(document.getElementById('thresh-delta-min').value) || 12,
   };
 }
 
@@ -878,11 +671,10 @@ function saveThresholds() {
   setTimeout(() => s.style.opacity = '0', 2000);
 }
 
-// ── SPARK LINES ──────────────────────────────────────────────────────
-
+// ── SPARK LINES ────────────────────────────────────────────────────────
 function drawSpark(id, data, color) {
   const svg = document.getElementById(id);
-  if (!svg) return;
+  if (!svg || data.length < 2) return;
   const w = 180, h = 32, pad = 2;
   const slice = data.slice(-24);
   const min = Math.min(...slice), max = Math.max(...slice);
@@ -890,244 +682,92 @@ function drawSpark(id, data, color) {
   const pts = slice.map((v, i) => {
     const x = pad + (i / (slice.length - 1)) * (w - pad * 2);
     const y = h - pad - ((v - min) / range) * (h - pad * 2);
-    return `${x},${y}`;
+    return x + ',' + y;
   }).join(' ');
   svg.innerHTML = `<polyline points="${pts}" fill="none" stroke="${color}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.7"/>`;
 }
 
-// ── CHART SETUP ──────────────────────────────────────────────────────
-
-const chartDefaults = {
-  responsive: true,
-  maintainAspectRatio: false,
-  animation: { duration: 400 },
+// ── CHARTS ─────────────────────────────────────────────────────────────
+let chartsReady = false;
+const charts = {};
+const chartOpts = {
+  responsive: true, maintainAspectRatio: false, animation: { duration: 400 },
   plugins: {
     legend: { display: false },
     tooltip: {
-      backgroundColor: '#0e1628',
-      borderColor: 'rgba(255,255,255,0.1)',
-      borderWidth: 1,
-      titleColor: '#7a8aaa',
-      bodyColor: '#e8edf8',
-      titleFont: { family: 'DM Mono', size: 10 },
-      bodyFont:  { family: 'DM Mono', size: 12 },
+      backgroundColor: '#0e1628', borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1,
+      titleColor: '#7a8aaa', bodyColor: '#e8edf8',
+      titleFont: { family: 'DM Mono', size: 10 }, bodyFont: { family: 'DM Mono', size: 12 },
     }
   },
   scales: {
-    x: {
-      ticks: { color: '#3d4d6a', font: { family: 'DM Mono', size: 9 }, maxTicksLimit: 6 },
-      grid:  { color: 'rgba(255,255,255,0.04)' },
-    },
-    y: {
-      ticks: { color: '#3d4d6a', font: { family: 'DM Mono', size: 9 }, maxTicksLimit: 5 },
-      grid:  { color: 'rgba(255,255,255,0.04)' },
-    }
+    x: { ticks: { color: '#3d4d6a', font: { family: 'DM Mono', size: 9 }, maxTicksLimit: 6 }, grid: { color: 'rgba(255,255,255,0.04)' } },
+    y: { ticks: { color: '#3d4d6a', font: { family: 'DM Mono', size: 9 }, maxTicksLimit: 5 }, grid: { color: 'rgba(255,255,255,0.04)' } }
   }
 };
 
-function slicedData(arr, range) {
-  const pts = range === '6h' ? 24 : range === '12h' ? 48 : 96;
-  return arr.slice(-pts);
-}
-
-function makeLineDataset(data, color, label) {
+function ds(data, color, label, fill) {
   return {
-    label,
-    data,
-    borderColor: color,
-    borderWidth: 1.5,
-    pointRadius: 0,
-    tension: 0.4,
-    fill: false,
+    label, data, borderColor: color, borderWidth: 1.5,
+    pointRadius: 0, tension: 0.4, fill: !!fill,
+    backgroundColor: fill ? color.replace('rgb','rgba').replace(')',',0.08)') : undefined,
   };
 }
 
-function makeAreaDataset(data, color, label) {
-  return {
-    label,
-    data,
-    borderColor: color,
-    borderWidth: 1.5,
-    pointRadius: 0,
-    tension: 0.4,
-    fill: true,
-    backgroundColor: color.replace(')', ',0.08)').replace('rgb','rgba'),
-  };
+function initCharts() {
+  if (chartsReady) return;
+  chartsReady = true;
+  const pts = 24;
+  const lbls = realLabels.length >= pts ? realLabels.slice(-pts) : makeLabels(pts);
+
+  charts.temp  = new Chart(document.getElementById('chart-temp').getContext('2d'),  { type:'line', data:{ labels: lbls, datasets:[ds(realTempHist.slice(-pts),  'rgb(34,211,200)', 'Temp °F',   true)] }, options: chartOpts });
+  charts.humid = new Chart(document.getElementById('chart-humid').getContext('2d'), { type:'line', data:{ labels: lbls, datasets:[ds(realHumidHist.slice(-pts), 'rgb(34,211,200)', 'Humidity %',true)] }, options: chartOpts });
+  charts.hvac  = new Chart(document.getElementById('chart-hvac').getContext('2d'),  { type:'line', data:{ labels: simLabels.slice(-pts), datasets:[ds(simSupply.slice(-pts),'rgb(61,142,248)','Supply'),ds(simReturn.slice(-pts),'rgb(245,166,35)','Return')] }, options: chartOpts });
+  charts.delta = new Chart(document.getElementById('chart-delta').getContext('2d'), { type:'line', data:{ labels: simLabels.slice(-pts), datasets:[ds(simDelta.slice(-pts),  'rgb(46,204,113)', 'Delta T',   true)] }, options: chartOpts });
 }
 
-const charts = {};
-
-function initChart(id, datasets, yLabel) {
-  const ctx = document.getElementById(id).getContext('2d');
-  charts[id] = new Chart(ctx, {
-    type: 'line',
-    data: { labels: allLabels.slice(-24), datasets },
-    options: { ...chartDefaults,
-      scales: {
-        ...chartDefaults.scales,
-        y: { ...chartDefaults.scales.y,
-          title: { display: !!yLabel, text: yLabel, color: '#3d4d6a', font: { family: 'DM Mono', size: 9 } }
-        }
-      }
-    }
-  });
+function updateRealCharts() {
+  if (!chartsReady) return;
+  const pts = charts.temp.data.labels.length;
+  charts.temp.data.labels  = realLabels.slice(-pts);
+  charts.temp.data.datasets[0].data  = realTempHist.slice(-pts);
+  charts.humid.data.labels = realLabels.slice(-pts);
+  charts.humid.data.datasets[0].data = realHumidHist.slice(-pts);
+  charts.temp.update('none');
+  charts.humid.update('none');
 }
-
-initChart('chart-temp',
-  [makeAreaDataset(tempHistory.slice(-24), 'rgb(61,142,248)', 'Temp °F')],
-  '°F'
-);
-
-initChart('chart-humid',
-  [makeAreaDataset(humidHistory.slice(-24), 'rgb(34,211,200)', 'Humidity %')],
-  '%'
-);
-
-initChart('chart-hvac', [
-  makeLineDataset(supplyHistory.slice(-24), 'rgb(61,142,248)', 'Supply °F'),
-  makeLineDataset(returnHistory.slice(-24), 'rgb(245,166,35)', 'Return °F'),
-], '°F');
-
-initChart('chart-delta',
-  [makeAreaDataset(deltaHistory.slice(-24), 'rgb(46,204,113)', 'Delta T °F')],
-  '°F'
-);
-
-// Range button handler
-const rangeMap = {
-  'temp':  { chart: 'chart-temp',  data: [tempHistory] },
-  'humid': { chart: 'chart-humid', data: [humidHistory] },
-  'hvac':  { chart: 'chart-hvac',  data: [supplyHistory, returnHistory] },
-  'delta': { chart: 'chart-delta', data: [deltaHistory] },
-};
 
 function setRange(btn, range, key) {
-  key = key || 'temp';
-  const siblings = btn.parentElement.querySelectorAll('.range-btn');
-  siblings.forEach(b => b.classList.remove('active'));
+  btn.parentElement.querySelectorAll('.range-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   const pts = range === '6h' ? 24 : range === '12h' ? 48 : 96;
-  const info = rangeMap[key];
-  const chart = charts[info.chart];
-  chart.data.labels = allLabels.slice(-pts);
-  info.data.forEach((d, i) => chart.data.datasets[i].data = d.slice(-pts));
-  chart.update();
-}
-
-// ── LIVE UPDATE LOOP ──────────────────────────────────────────────────
-
-function drift(val, step, min, max) {
-  const next = val + (Math.random() - 0.5) * step;
-  return Math.min(max, Math.max(min, Math.round(next * 10) / 10));
-}
-
-function updateLive() {
-  current.temp   = drift(current.temp,   0.4, 60, 85);
-  current.humid  = drift(current.humid,  1.2, 30, 75);
-  current.supply = drift(current.supply, 0.5, 48, 70);
-  current.ret    = drift(current.ret,    0.3, 65, 80);
-  const delta    = Math.round((current.ret - current.supply) * 10) / 10;
-
-  // Push to history
-  tempHistory.push(current.temp);     tempHistory.shift();
-  humidHistory.push(current.humid);   humidHistory.shift();
-  supplyHistory.push(current.supply); supplyHistory.shift();
-  returnHistory.push(current.ret);    returnHistory.shift();
-  deltaHistory.push(delta);           deltaHistory.shift();
-  allLabels.push(new Date().toTimeString().slice(0,5)); allLabels.shift();
-
-  const thresh = getThresholds();
-
-  // ── Temp card
-  document.getElementById('val-temp').innerHTML = `${Math.round(current.temp)}<span class="unit">°F</span>`;
-  const tempWarn = current.temp < thresh.tempMin || current.temp > thresh.tempMax;
-  setCardStatus('card-temp', 'badge-temp', tempWarn ? 'warn' : 'ok', tempWarn ? (current.temp < thresh.tempMin ? 'Low' : 'High') : 'Normal');
-
-  // ── Humidity card
-  document.getElementById('val-humid').innerHTML = `${Math.round(current.humid)}<span class="unit">%</span>`;
-  const humidWarn = current.humid > thresh.humidMax;
-  setCardStatus('card-humid', 'badge-humid', humidWarn ? 'warn' : 'ok', humidWarn ? 'High' : 'Normal');
-
-  // ── Supply card
-  document.getElementById('val-supply').innerHTML = `${Math.round(current.supply)}<span class="unit">°F</span>`;
-  setCardStatus('card-supply', 'badge-supply', 'ok', 'Normal');
-
-  // ── Return card
-  document.getElementById('val-return').innerHTML = `${Math.round(current.ret)}<span class="unit">°F</span>`;
-  setCardStatus('card-return', 'badge-return', 'ok', 'Normal');
-
-  // ── Delta card
-  document.getElementById('val-delta').innerHTML = `${delta}<span class="unit">°F</span>`;
-  const deltaLow = delta < thresh.deltaMin;
-  setCardStatus('card-delta', 'badge-delta', deltaLow ? 'warn' : 'ok', deltaLow ? 'Low' : 'Good');
-
-  // ── Spark lines
-  drawSpark('spark-temp',   tempHistory,   '#3d8ef8');
-  drawSpark('spark-humid',  humidHistory,  '#22d3c8');
-  drawSpark('spark-supply', supplyHistory, '#3d8ef8');
-  drawSpark('spark-return', returnHistory, '#f5a623');
-
-  // ── Update charts (active range)
-  ['chart-temp','chart-humid','chart-hvac','chart-delta'].forEach(id => {
-    const chart = charts[id];
-    const info = Object.values(rangeMap).find(r => r.chart === id);
-    if (!info) return;
-    const pts = chart.data.labels.length;
-    chart.data.labels = allLabels.slice(-pts);
-    info.data.forEach((d, i) => chart.data.datasets[i].data = d.slice(-pts));
-    chart.update('none');
-  });
-
-  // ── Global status
-  const anyWarn = tempWarn || humidWarn || deltaLow || current.leak;
-  const dot = document.getElementById('status-dot');
-  const statusText = document.getElementById('status-text');
-  const banner = document.getElementById('alert-banner');
-
-  if (current.leak) {
-    dot.className = 'status-dot danger';
-    statusText.textContent = 'Leak detected!';
-    banner.classList.add('visible');
-    document.getElementById('alert-banner-text').textContent = 'Water detected — check sensor locations immediately.';
-  } else if (anyWarn) {
-    dot.className = 'status-dot warn';
-    statusText.textContent = 'Warning';
-    banner.classList.remove('visible');
-  } else {
-    dot.className = 'status-dot';
-    statusText.textContent = 'All clear';
-    banner.classList.remove('visible');
+  if (key === 'temp') {
+    charts.temp.data.labels = realLabels.slice(-pts);
+    charts.temp.data.datasets[0].data = realTempHist.slice(-pts);
+    charts.temp.update();
+  } else if (key === 'humid') {
+    charts.humid.data.labels = realLabels.slice(-pts);
+    charts.humid.data.datasets[0].data = realHumidHist.slice(-pts);
+    charts.humid.update();
+  } else if (key === 'hvac') {
+    charts.hvac.data.labels = simLabels.slice(-pts);
+    charts.hvac.data.datasets[0].data = simSupply.slice(-pts);
+    charts.hvac.data.datasets[1].data = simReturn.slice(-pts);
+    charts.hvac.update();
   }
-
-  document.getElementById('last-update').textContent = 'Updated ' + new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
 }
 
-function setCardStatus(cardId, badgeId, status, label) {
-  const card  = document.getElementById(cardId);
-  const badge = document.getElementById(badgeId);
-  card.className  = `sensor-card status-${status}`;
-  badge.className = `card-badge${status !== 'ok' ? ' ' + status : ''}`;
-  badge.textContent = label;
-}
-
-// Init spark lines
-drawSpark('spark-temp',   tempHistory,   '#3d8ef8');
-drawSpark('spark-humid',  humidHistory,  '#22d3c8');
-drawSpark('spark-supply', supplyHistory, '#3d8ef8');
-drawSpark('spark-return', returnHistory, '#f5a623');
-
-// Update every 5 seconds (simulated; real ESP32 will push every 30s)
-setInterval(updateLive, 5000);
-updateLive();
+// ── START ──────────────────────────────────────────────────────────────
+fetchHistory().then(() => fetchLatest());
+setInterval(fetchLatest, 30000);
+setInterval(driftSim,    5000);
+driftSim();
 
 </script>
-
-<!-- PWA Service Worker Registration -->
 <script>
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('sw.js').catch(() => {});
 }
 </script>
-
 </body>
 </html>
