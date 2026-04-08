@@ -1,4 +1,4 @@
-const CACHE = 'home-monitor-v5';
+const CACHE = 'home-monitor-v6';
 
 self.addEventListener('install', e => {
   self.skipWaiting();
@@ -14,6 +14,9 @@ self.addEventListener('activate', e => {
 
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
+
+  // Only handle http/https — ignore chrome-extension and other schemes
+  if (!url.protocol.startsWith('http')) return;
 
   // Never intercept Supabase API calls — always go straight to network
   if (url.hostname.includes('supabase.co')) {
