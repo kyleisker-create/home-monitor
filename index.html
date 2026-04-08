@@ -722,10 +722,22 @@ const DEVICES = {
 };
 
 // Per-device data stores
+// hist = loaded once from Supabase history fetch (ordered, no duplicates)
+// live = appended every 30s from fetchDevice (new readings only)
+// combined view = hist + live, deduped by label for chart display
 const store = {
-  basement: { temp: [], humid: [], labels: [], lastTemp: null, lastHumid: null, lastSeen: null },
-  upstairs: { temp: [], humid: [], labels: [], lastTemp: null, lastHumid: null, lastSeen: null },
+  basement: { hist: { temp: [], humid: [], labels: [] },
+              live: { temp: [], humid: [], labels: [] },
+              lastTemp: null, lastHumid: null, lastSeen: null },
+  upstairs: { hist: { temp: [], humid: [], labels: [] },
+              live: { temp: [], humid: [], labels: [] },
+              lastTemp: null, lastHumid: null, lastSeen: null },
 };
+
+// Helper: returns combined hist + live arrays for a device
+function combined(deviceKey, field) {
+  return [...store[deviceKey].hist[field], ...store[deviceKey].live[field]];
+}
 
 const POINTS = 2880; // 24h at 30s interval
 
@@ -810,13 +822,17 @@ async function fetchDevice(deviceKey) {
     const tempWarn  = tempF < thresh.tempMin || tempF > thresh.tempMax;
     const humidWarn = humidity > thresh.humidMax;
 
-    // Update store
+    // Update store — append new live readings, keep hist untouched
     store[deviceKey].lastTemp  = tempF;
     store[deviceKey].lastHumid = humidity;
     store[deviceKey].lastSeen  = t;
-    store[deviceKey].temp.push(tempF);    if (store[deviceKey].temp.length   > POINTS) store[deviceKey].temp.shift();
-    store[deviceKey].humid.push(humidity); if (store[deviceKey].humid.length  > POINTS) store[deviceKey].humid.shift();
-    store[deviceKey].labels.push(lbl);    if (store[deviceKey].labels.length  > POINTS) store[deviceKey].labels.shift();
+    store[deviceKey].live.temp.push(tempF);
+    store[deviceKey].live.humid.push(humidity);
+    store[deviceKey].live.labels.push(lbl);
+    // Cap live array at 2880 points
+    if (store[deviceKey].live.temp.length   > POINTS) store[deviceKey].live.temp.shift();
+    if (store[deviceKey].live.humid.length  > POINTS) store[deviceKey].live.humid.shift();
+    if (store[deviceKey].live.labels.length > POINTS) store[deviceKey].live.labels.shift();
 
     // Update UI
     const pfx = deviceKey === 'basement' ? 'b' : 'u';
@@ -824,8 +840,8 @@ async function fetchDevice(deviceKey) {
     document.getElementById(`val-${pfx}-humid`).innerHTML = Math.round(humidity) + '<span class="unit">%</span>';
     setBadge(`badge-${pfx}-temp`,  tempWarn,  tempWarn  ? (tempF < thresh.tempMin ? 'Low' : 'High') : 'Normal');
     setBadge(`badge-${pfx}-humid`, humidWarn, humidWarn ? 'High' : 'Normal');
-    drawSpark(`spark-${pfx}-temp`,  store[deviceKey].temp,  device.color);
-    drawSpark(`spark-${pfx}-humid`, store[deviceKey].humid, device.color);
+    drawSpark(`spark-${pfx}-temp`,  combined(deviceKey, 'temp'),  device.color);
+    drawSpark(`spark-${pfx}-humid`, combined(deviceKey, 'humid'), device.color);
 
     // Tab summary
     document.getElementById(`tab-reading-${deviceKey}`).textContent = Math.round(tempF) + '°F';
@@ -876,15 +892,19 @@ async function fetchHistory() {
       );
       if (!res.ok) continue;
       const data = await res.json();
+      // Clear and repopulate hist — never append to avoid duplicates
+      store[deviceKey].hist.temp   = [];
+      store[deviceKey].hist.humid  = [];
+      store[deviceKey].hist.labels = [];
       data.forEach(row => {
-        store[deviceKey].temp.push(parseFloat(row.temp_f));
-        store[deviceKey].humid.push(parseFloat(row.humidity));
+        store[deviceKey].hist.temp.push(parseFloat(row.temp_f));
+        store[deviceKey].hist.humid.push(parseFloat(row.humidity));
         const t = new Date(row.recorded_at);
-        store[deviceKey].labels.push(t.getHours().toString().padStart(2,'0') + ':' + t.getMinutes().toString().padStart(2,'0'));
+        store[deviceKey].hist.labels.push(t.getHours().toString().padStart(2,'0') + ':' + t.getMinutes().toString().padStart(2,'0'));
       });
       const pfx = deviceKey === 'basement' ? 'b' : 'u';
-      drawSpark(`spark-${pfx}-temp`,  store[deviceKey].temp,  device.color);
-      drawSpark(`spark-${pfx}-humid`, store[deviceKey].humid, device.color);
+      drawSpark(`spark-${pfx}-temp`,  combined(deviceKey, 'temp'),  device.color);
+      drawSpark(`spark-${pfx}-humid`, combined(deviceKey, 'humid'), device.color);
     } catch(e) { console.error(`History error (${deviceKey}):`, e); }
   }
 }
@@ -1099,15 +1119,15 @@ function sharedLabels(range) {
 function initCharts() {
   if (chartsReady) return;
   chartsReady = true;
-  const pts = Math.min(720, store.basement.labels.length) || 24;
+  const pts = Math.min(720, combined('basement', 'labels').length) || 24;
 
   charts.temp = new Chart(document.getElementById('chart-temp').getContext('2d'), {
     type: 'line',
     data: {
-      labels: store.basement.labels.slice(-pts),
+      labels: combined('basement', 'labels').slice(-pts),
       datasets: [
-        ds(store.basement.temp.slice(-pts),  'rgb(61,142,248)',  'Basement °F', false),
-        ds(store.upstairs.temp.slice(-pts),  'rgb(167,139,250)', 'Upstairs °F', false),
+        ds(combined('basement', 'temp').slice(-pts),  'rgb(61,142,248)',  'Basement °F', false),
+        ds(combined('upstairs', 'temp').slice(-pts),  'rgb(167,139,250)', 'Upstairs °F', false),
       ]
     },
     options: chartOpts
@@ -1116,10 +1136,10 @@ function initCharts() {
   charts.humid = new Chart(document.getElementById('chart-humid').getContext('2d'), {
     type: 'line',
     data: {
-      labels: store.basement.labels.slice(-pts),
+      labels: combined('basement', 'labels').slice(-pts),
       datasets: [
-        ds(store.basement.humid.slice(-pts), 'rgb(61,142,248)',  'Basement %', false),
-        ds(store.upstairs.humid.slice(-pts), 'rgb(167,139,250)', 'Upstairs %', false),
+        ds(combined('basement', 'humid').slice(-pts), 'rgb(61,142,248)',  'Basement %', false),
+        ds(combined('upstairs', 'humid').slice(-pts), 'rgb(167,139,250)', 'Upstairs %', false),
       ]
     },
     options: chartOpts
@@ -1151,10 +1171,10 @@ function updateChart(deviceKey) {
   if (!chartsReady) return;
   const idx = deviceKey === 'basement' ? 0 : 1;
   const pts = charts.temp.data.labels.length;
-  charts.temp.data.labels = store.basement.labels.slice(-pts);
-  charts.temp.data.datasets[idx].data  = store[deviceKey].temp.slice(-pts);
-  charts.humid.data.labels = store.basement.labels.slice(-pts);
-  charts.humid.data.datasets[idx].data = store[deviceKey].humid.slice(-pts);
+  charts.temp.data.labels = combined('basement', 'labels').slice(-pts);
+  charts.temp.data.datasets[idx].data  = combined(deviceKey, 'temp').slice(-pts);
+  charts.humid.data.labels = combined('basement', 'labels').slice(-pts);
+  charts.humid.data.datasets[idx].data = combined(deviceKey, 'humid').slice(-pts);
   charts.temp.update('none');
   charts.humid.update('none');
 }
@@ -1162,16 +1182,16 @@ function updateChart(deviceKey) {
 function setRange(btn, range, key) {
   btn.parentElement.querySelectorAll('.range-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
-  const pts = Math.min(ptsForRange(range), store.basement.labels.length) || ptsForRange(range);
+  const pts = Math.min(ptsForRange(range), combined('basement', 'labels').length) || ptsForRange(range);
   if (key === 'temp') {
-    charts.temp.data.labels = store.basement.labels.slice(-pts);
-    charts.temp.data.datasets[0].data = store.basement.temp.slice(-pts);
-    charts.temp.data.datasets[1].data = store.upstairs.temp.slice(-pts);
+    charts.temp.data.labels = combined('basement', 'labels').slice(-pts);
+    charts.temp.data.datasets[0].data = combined('basement', 'temp').slice(-pts);
+    charts.temp.data.datasets[1].data = combined('upstairs', 'temp').slice(-pts);
     charts.temp.update();
   } else if (key === 'humid') {
-    charts.humid.data.labels = store.basement.labels.slice(-pts);
-    charts.humid.data.datasets[0].data = store.basement.humid.slice(-pts);
-    charts.humid.data.datasets[1].data = store.upstairs.humid.slice(-pts);
+    charts.humid.data.labels = combined('basement', 'labels').slice(-pts);
+    charts.humid.data.datasets[0].data = combined('basement', 'humid').slice(-pts);
+    charts.humid.data.datasets[1].data = combined('upstairs', 'humid').slice(-pts);
     charts.humid.update();
   }
 }
