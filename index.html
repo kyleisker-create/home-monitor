@@ -440,17 +440,16 @@
           <div class="card-sub">Comfort range: 30–50%</div>
           <svg class="spark" id="spark-b-humid" viewBox="0 0 180 32" preserveAspectRatio="none"></svg>
         </div>
-        <div class="sensor-card sim">
+        <div class="sensor-card basement" id="card-b-leak">
           <div class="card-header">
             <span class="card-label">Leak detection</span>
-            <div class="card-badges"><span class="card-badge sim">Simulated</span><span class="card-badge">Dry</span></div>
+            <div class="card-badges">
+              <span class="card-badge blue">Basement</span>
+              <span class="card-badge" id="badge-b-leak">Dry</span>
+            </div>
           </div>
-          <div class="card-value" style="font-size:22px;padding-top:6px">No leak</div>
-          <div class="card-sub">Sensors not yet wired</div>
-          <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap">
-            <span style="font-family:var(--font-mono);font-size:10px;padding:4px 10px;border-radius:4px;background:rgba(46,204,113,0.1);color:var(--ok);border:1px solid rgba(46,204,113,0.2)">Kitchen</span>
-            <span style="font-family:var(--font-mono);font-size:10px;padding:4px 10px;border-radius:4px;background:rgba(46,204,113,0.1);color:var(--ok);border:1px solid rgba(46,204,113,0.2)">Utility</span>
-          </div>
+          <div class="card-value" id="val-b-leak" style="font-size:22px;padding-top:6px">No leak</div>
+          <div class="card-sub" id="sub-b-leak">Floor drain sensor active</div>
         </div>
         <div class="sensor-card sim">
           <div class="card-header">
@@ -728,7 +727,7 @@ const DEVICES = {
 const store = {
   basement: { hist: { temp: [], humid: [], labels: [] },
               live: { temp: [], humid: [], labels: [] },
-              lastTemp: null, lastHumid: null, lastSeen: null },
+              lastTemp: null, lastHumid: null, lastSeen: null, lastLeak: false },
   upstairs: { hist: { temp: [], humid: [], labels: [] },
               live: { temp: [], humid: [], labels: [] },
               lastTemp: null, lastHumid: null, lastSeen: null },
@@ -807,7 +806,7 @@ async function fetchDevice(deviceKey) {
   const device = DEVICES[deviceKey];
   try {
     const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/sensor_readings?select=temp_f,humidity,recorded_at&device_id=eq.${device.id}&order=recorded_at.desc&limit=1`,
+      `${SUPABASE_URL}/rest/v1/sensor_readings?select=temp_f,humidity,leak,recorded_at&device_id=eq.${device.id}&order=recorded_at.desc&limit=1`,
       { headers: headers() }
     );
     if (!res.ok) return;
@@ -818,6 +817,7 @@ async function fetchDevice(deviceKey) {
     const humidity = parseFloat(row.humidity);
     const t        = new Date(row.recorded_at);
     const lbl      = t.getHours().toString().padStart(2,'0') + ':' + t.getMinutes().toString().padStart(2,'0');
+    const leak     = row.leak === true;
     const thresh   = getThresholds();
     const tempWarn  = tempF < thresh.tempMin || tempF > thresh.tempMax;
     const humidWarn = humidity > thresh.humidMax;
@@ -843,6 +843,32 @@ async function fetchDevice(deviceKey) {
     drawSpark(`spark-${pfx}-temp`,  combined(deviceKey, 'temp'),  device.color);
     drawSpark(`spark-${pfx}-humid`, combined(deviceKey, 'humid'), device.color);
 
+    // Leak sensor UI (basement only)
+    if (deviceKey === 'basement') {
+      const leakCard  = document.getElementById('card-b-leak');
+      const leakBadge = document.getElementById('badge-b-leak');
+      const leakVal   = document.getElementById('val-b-leak');
+      const leakSub   = document.getElementById('sub-b-leak');
+      if (leak) {
+        leakCard.style.setProperty('--card-accent', 'var(--danger)');
+        leakCard.style.borderColor = 'rgba(240,64,64,0.25)';
+        leakBadge.className = 'card-badge danger';
+        leakBadge.textContent = 'Detected';
+        leakVal.textContent = 'Leak!';
+        leakVal.style.color = 'var(--danger)';
+        leakSub.textContent = 'Check sensor location';
+      } else {
+        leakCard.style.setProperty('--card-accent', 'var(--ok)');
+        leakCard.style.borderColor = '';
+        leakBadge.className = 'card-badge';
+        leakBadge.textContent = 'Dry';
+        leakVal.textContent = 'No leak';
+        leakVal.style.color = '';
+        leakSub.textContent = 'Floor drain sensor active';
+      }
+      store.basement.lastLeak = leak;
+    }
+
     // Tab summary
     document.getElementById(`tab-reading-${deviceKey}`).textContent = Math.round(tempF) + '°F';
 
@@ -854,6 +880,7 @@ async function fetchDevice(deviceKey) {
     // Log alerts
     if (tempWarn)  logAlert(deviceKey, 'temp',  'warn', `${device.name} temperature ${tempF < thresh.tempMin ? 'below minimum' : 'above maximum'}`, tempF);
     if (humidWarn) logAlert(deviceKey, 'humid', 'warn', `${device.name} humidity above maximum`, humidity);
+    if (leak)      logAlert(deviceKey, 'leak',  'warn', `${device.name} water leak detected`, null);
 
     if (chartsReady) updateChart(deviceKey);
 
@@ -926,7 +953,8 @@ function updateGlobalStatus() {
 
   const bWarn = !bOffline && (
     (store.basement.lastTemp  != null && (store.basement.lastTemp  < thresh.tempMin || store.basement.lastTemp  > thresh.tempMax)) ||
-    (store.basement.lastHumid != null && store.basement.lastHumid > thresh.humidMax)
+    (store.basement.lastHumid != null && store.basement.lastHumid > thresh.humidMax) ||
+    store.basement.lastLeak === true
   );
   const uWarn = !uOffline && (
     (store.upstairs.lastTemp  != null && (store.upstairs.lastTemp  < thresh.tempMin || store.upstairs.lastTemp  > thresh.tempMax)) ||
@@ -964,7 +992,8 @@ function updateGlobalStatus() {
     txt.textContent = 'Warning';
     banner.classList.add('visible');
     const who = bWarn && uWarn ? 'Both devices' : bWarn ? 'Basement' : 'Upstairs';
-    bannerT.textContent = who + ' — threshold exceeded';
+    const leakMsg = store.basement.lastLeak ? ' — water leak detected' : ' — threshold exceeded';
+    bannerT.textContent = who + leakMsg;
 
   } else {
     dot.className = 'status-dot';
