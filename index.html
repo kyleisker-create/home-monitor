@@ -889,37 +889,92 @@ async function fetchHistory() {
   }
 }
 
+// A device is considered offline if its last reading is more than 5 minutes old
+const OFFLINE_THRESHOLD_MS = 5 * 60 * 1000;
+
+function isOffline(deviceKey) {
+  const seen = store[deviceKey].lastSeen;
+  if (!seen) return true;
+  return (Date.now() - seen.getTime()) > OFFLINE_THRESHOLD_MS;
+}
+
 function updateGlobalStatus() {
   const thresh = getThresholds();
-  const bWarn = (store.basement.lastTemp != null && (store.basement.lastTemp < thresh.tempMin || store.basement.lastTemp > thresh.tempMax)) ||
-                (store.basement.lastHumid != null && store.basement.lastHumid > thresh.humidMax);
-  const uWarn = (store.upstairs.lastTemp != null && (store.upstairs.lastTemp < thresh.tempMin || store.upstairs.lastTemp > thresh.tempMax)) ||
-                (store.upstairs.lastHumid != null && store.upstairs.lastHumid > thresh.humidMax);
-  const dot = document.getElementById('status-dot');
-  const txt = document.getElementById('status-text');
-  if (bWarn || uWarn) {
-    dot.className = 'status-dot warn'; txt.textContent = 'Warning';
+
+  const bOffline = isOffline('basement');
+  const uOffline = isOffline('upstairs');
+
+  const bWarn = !bOffline && (
+    (store.basement.lastTemp  != null && (store.basement.lastTemp  < thresh.tempMin || store.basement.lastTemp  > thresh.tempMax)) ||
+    (store.basement.lastHumid != null && store.basement.lastHumid > thresh.humidMax)
+  );
+  const uWarn = !uOffline && (
+    (store.upstairs.lastTemp  != null && (store.upstairs.lastTemp  < thresh.tempMin || store.upstairs.lastTemp  > thresh.tempMax)) ||
+    (store.upstairs.lastHumid != null && store.upstairs.lastHumid > thresh.humidMax)
+  );
+
+  const dot     = document.getElementById('status-dot');
+  const txt     = document.getElementById('status-text');
+  const banner  = document.getElementById('alert-banner');
+  const bannerT = document.getElementById('alert-banner-text');
+
+  // Offline takes priority over threshold warnings
+  if (bOffline || uOffline) {
+    const who = bOffline && uOffline ? 'Basement and Upstairs ESP32s are'
+              : bOffline ? 'Basement ESP32 is'
+              : 'Upstairs ESP32 is';
+    dot.className = 'status-dot danger';
+    txt.textContent = 'Device offline';
+    banner.classList.add('visible');
+    bannerT.textContent = who + ' not responding — check power and Wi-Fi';
+
+    // Mark the offline card visually
+    ['basement', 'upstairs'].forEach(dk => {
+      const pfx  = dk === 'basement' ? 'b' : 'u';
+      const card = document.getElementById(`card-${pfx}-temp`);
+      if (!card) return;
+      if (isOffline(dk)) {
+        card.classList.add('status-warn');
+        document.getElementById(`tab-reading-${dk}`).textContent = 'offline';
+      }
+    });
+
+  } else if (bWarn || uWarn) {
+    dot.className = 'status-dot warn';
+    txt.textContent = 'Warning';
+    banner.classList.add('visible');
     const who = bWarn && uWarn ? 'Both devices' : bWarn ? 'Basement' : 'Upstairs';
-    document.getElementById('alert-banner').classList.add('visible');
-    document.getElementById('alert-banner-text').textContent = who + ' — threshold exceeded';
+    bannerT.textContent = who + ' — threshold exceeded';
+
   } else {
-    dot.className = 'status-dot'; txt.textContent = 'All clear';
-    document.getElementById('alert-banner').classList.remove('visible');
+    dot.className = 'status-dot';
+    txt.textContent = 'All clear';
+    banner.classList.remove('visible');
   }
+
+  // Always refresh the settings device status panel if it is visible
+  updateDeviceStatus();
 }
 
 function updateDeviceStatus() {
   for (const deviceKey of ['basement', 'upstairs']) {
-    const seen = store[deviceKey].lastSeen;
-    const el   = document.getElementById(`status-${deviceKey}`);
+    const seen  = store[deviceKey].lastSeen;
+    const el    = document.getElementById(`status-${deviceKey}`);
     const badge = document.getElementById(`online-${deviceKey}`);
-    if (!seen) { el.textContent = 'No data yet'; badge.textContent = '--'; return; }
+    if (!seen) {
+      el.textContent   = 'No data received yet';
+      badge.textContent = 'Unknown';
+      badge.className   = 'offline-badge';
+      continue;
+    }
     const mins = Math.round((Date.now() - seen.getTime()) / 60000);
     el.textContent = `Last seen ${mins < 1 ? 'just now' : mins + 'm ago'}`;
-    if (mins < 2) {
-      badge.textContent = 'Online'; badge.className = 'online-badge';
+    if (mins < 5) {
+      badge.textContent = 'Online';  badge.className = 'online-badge';
+    } else if (mins < 30) {
+      badge.textContent = 'Delayed'; badge.className = 'offline-badge';
     } else {
-      badge.textContent = 'Check device'; badge.className = 'offline-badge';
+      badge.textContent = 'Offline'; badge.className = 'offline-badge';
     }
   }
 }
