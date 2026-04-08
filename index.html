@@ -1177,6 +1177,13 @@ function setRange(btn, range, key) {
 }
 
 // ── START ───────────────────────────────────────────────────────────────
+// Always force Live tab and Basement device on every page load
+document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+document.getElementById('section-live').classList.add('active');
+document.getElementById('nav-live').classList.add('active');
+switchDevice('basement');
+
 fetchHistory().then(() => fetchAllDevices());
 setInterval(fetchAllDevices, 30000);
 setInterval(driftSim, 5000);
