@@ -1,14 +1,7 @@
-const CACHE = 'home-monitor-v4';
-const STATIC = [
-  '/home-monitor/manifest.json',
-];
+const CACHE = 'home-monitor-v5';
 
 self.addEventListener('install', e => {
-  e.waitUntil(
-    caches.open(CACHE)
-      .then(c => c.addAll(STATIC))
-      .then(() => self.skipWaiting())
-  );
+  self.skipWaiting();
 });
 
 self.addEventListener('activate', e => {
@@ -22,10 +15,15 @@ self.addEventListener('activate', e => {
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
 
-  // Always network-first for the main HTML page so updates come through immediately
-  if (url.pathname.endsWith('/home-monitor/') ||
-      url.pathname.endsWith('/home-monitor/index.html') ||
-      url.pathname === '/home-monitor') {
+  // Never intercept Supabase API calls — always go straight to network
+  if (url.hostname.includes('supabase.co')) {
+    e.respondWith(fetch(e.request));
+    return;
+  }
+
+  // Network-first for the main HTML page so updates always come through
+  if (url.pathname.includes('/home-monitor') &&
+      (url.pathname.endsWith('/') || url.pathname.endsWith('.html'))) {
     e.respondWith(
       fetch(e.request)
         .then(res => {
@@ -38,21 +36,16 @@ self.addEventListener('fetch', e => {
     return;
   }
 
-  // Network-first for Supabase API calls — never serve stale sensor data from cache
-  if (url.hostname.includes('supabase.co')) {
-    e.respondWith(fetch(e.request).catch(() => new Response('{}', { headers: { 'Content-Type': 'application/json' } })));
-    return;
-  }
-
-  // Cache-first for everything else (fonts, Chart.js CDN, manifest)
+  // Cache-first for everything else (fonts, Chart.js, manifest)
   e.respondWith(
     caches.match(e.request)
-      .then(cached => cached || fetch(e.request)
-        .then(res => {
+      .then(cached => {
+        if (cached) return cached;
+        return fetch(e.request).then(res => {
           const clone = res.clone();
           caches.open(CACHE).then(c => c.put(e.request, clone));
           return res;
-        })
-      )
+        });
+      })
   );
 });
