@@ -601,7 +601,14 @@
         </div>
       </div>
       <div class="chart-card">
-        <div class="chart-title">HVAC supply vs return (simulated)</div>
+        <div class="chart-title">
+          <span id="chart-hvac-title">HVAC supply vs return (simulated)</span>
+          <div style="display:flex;gap:4px">
+            <button class="range-btn active" onclick="setRange(this,'6h','hvac')">6h</button>
+            <button class="range-btn" onclick="setRange(this,'12h','hvac')">12h</button>
+            <button class="range-btn" onclick="setRange(this,'24h','hvac')">24h</button>
+          </div>
+        </div>
         <div class="chart-canvas-wrap"><canvas id="chart-hvac"></canvas></div>
         <div class="chart-legend">
           <div class="legend-item"><div class="legend-line" style="background:#3d8ef8"></div>Supply</div>
@@ -609,7 +616,14 @@
         </div>
       </div>
       <div class="chart-card">
-        <div class="chart-title">Delta T (simulated)</div>
+        <div class="chart-title">
+          <span id="chart-delta-title">Delta T (simulated)</span>
+          <div style="display:flex;gap:4px">
+            <button class="range-btn active" onclick="setRange(this,'6h','delta')">6h</button>
+            <button class="range-btn" onclick="setRange(this,'12h','delta')">12h</button>
+            <button class="range-btn" onclick="setRange(this,'24h','delta')">24h</button>
+          </div>
+        </div>
         <div class="chart-canvas-wrap"><canvas id="chart-delta"></canvas></div>
       </div>
     </div>
@@ -806,11 +820,15 @@ function driftSim() {
   simReturn.push(Math.round(simState.ret    * 10) / 10); simReturn.shift();
   simDelta.push(delta); simDelta.shift();
   simLabels.push(new Date().toTimeString().slice(0,5)); simLabels.shift();
-  document.getElementById('val-supply').innerHTML = Math.round(simState.supply) + '<span class="unit">°F</span>';
-  document.getElementById('val-return').innerHTML = Math.round(simState.ret)    + '<span class="unit">°F</span>';
-  document.getElementById('val-delta').innerHTML  = delta + '<span class="unit">°F</span>';
-  drawSpark('spark-supply', simSupply, '#3d8ef8');
-  drawSpark('spark-return', simReturn, '#f5a623');
+  // Only update live card values and sparks with simulated data if real probe data has not arrived
+  const hasRealData = store.basement.lastSupply != null;
+  if (!hasRealData) {
+    document.getElementById('val-supply').innerHTML = Math.round(simState.supply) + '<span class="unit">°F</span>';
+    document.getElementById('val-return').innerHTML = Math.round(simState.ret)    + '<span class="unit">°F</span>';
+    document.getElementById('val-delta').innerHTML  = delta + '<span class="unit">°F</span>';
+    drawSpark('spark-supply', simSupply, '#3d8ef8');
+    drawSpark('spark-return', simReturn, '#f5a623');
+  }
 }
 
 // ── FETCH REAL DATA ────────────────────────────────────────────────────
@@ -1278,11 +1296,9 @@ function initCharts() {
   });
 
   // Update history chart titles to reflect data source
-  const hvacTitle  = document.querySelector('#chart-hvac').closest('.chart-card').querySelector('.chart-title');
-  const deltaTitle = document.querySelector('#chart-delta').closest('.chart-card').querySelector('.chart-title');
   if (useRealHvac) {
-    hvacTitle.childNodes[0].textContent  = 'HVAC supply vs return';
-    deltaTitle.childNodes[0].textContent = 'Delta T';
+    document.getElementById('chart-hvac-title').textContent  = 'HVAC supply vs return';
+    document.getElementById('chart-delta-title').textContent = 'Delta T';
   }
 }
 
@@ -1333,6 +1349,32 @@ function setRange(btn, range, key) {
     charts.humid.data.datasets[0].data = combined('basement', 'humid').slice(-pts);
     charts.humid.data.datasets[1].data = combined('upstairs', 'humid').slice(-pts);
     charts.humid.update();
+  } else if (key === 'hvac') {
+    const supplyArr = combined('basement', 'supply').filter(v => v != null);
+    const returnArr = combined('basement', 'return').filter(v => v != null);
+    const hvacPts   = Math.min(ptsForRange(range), supplyArr.length, returnArr.length) || ptsForRange(range);
+    const useReal   = supplyArr.length > 0;
+    charts.hvac.data.labels            = useReal ? combined('basement', 'labels').slice(-hvacPts) : simLabels;
+    charts.hvac.data.datasets[0].data  = useReal ? supplyArr.slice(-hvacPts) : simSupply;
+    charts.hvac.data.datasets[1].data  = useReal ? returnArr.slice(-hvacPts) : simReturn;
+    charts.hvac.update();
+  } else if (key === 'delta') {
+    const supplyArr = combined('basement', 'supply').filter(v => v != null);
+    const returnArr = combined('basement', 'return').filter(v => v != null);
+    const hvacPts   = Math.min(ptsForRange(range), supplyArr.length, returnArr.length) || ptsForRange(range);
+    const useReal   = supplyArr.length > 0;
+    if (useReal) {
+      const deltaArr = supplyArr.slice(-hvacPts).map((s, i) => {
+        const r = returnArr.slice(-hvacPts)[i];
+        return r != null ? Math.round((r - s) * 10) / 10 : null;
+      }).filter(v => v != null);
+      charts.delta.data.labels           = combined('basement', 'labels').slice(-hvacPts);
+      charts.delta.data.datasets[0].data = deltaArr;
+    } else {
+      charts.delta.data.labels           = simLabels;
+      charts.delta.data.datasets[0].data = simDelta;
+    }
+    charts.delta.update();
   }
 }
 
