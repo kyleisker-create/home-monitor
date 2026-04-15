@@ -451,28 +451,37 @@
           <div class="card-value" id="val-b-leak" style="font-size:22px;padding-top:6px">No leak</div>
           <div class="card-sub" id="sub-b-leak">Floor drain sensor active</div>
         </div>
-        <div class="sensor-card sim">
+        <div class="sensor-card sim" id="card-supply">
           <div class="card-header">
             <span class="card-label">HVAC supply</span>
-            <div class="card-badges"><span class="card-badge sim">Simulated</span><span class="card-badge" id="badge-supply">Normal</span></div>
+            <div class="card-badges">
+              <span class="card-badge sim" id="source-supply">Simulated</span>
+              <span class="card-badge" id="badge-supply">--</span>
+            </div>
           </div>
           <div class="card-value" id="val-supply">--<span class="unit">°F</span></div>
-          <div class="card-sub">Air leaving unit</div>
+          <div class="card-sub" id="sub-supply">Air leaving unit</div>
           <svg class="spark" id="spark-supply" viewBox="0 0 180 32" preserveAspectRatio="none"></svg>
         </div>
-        <div class="sensor-card sim">
+        <div class="sensor-card sim" id="card-return">
           <div class="card-header">
             <span class="card-label">HVAC return</span>
-            <div class="card-badges"><span class="card-badge sim">Simulated</span><span class="card-badge" id="badge-return">Normal</span></div>
+            <div class="card-badges">
+              <span class="card-badge sim" id="source-return">Simulated</span>
+              <span class="card-badge" id="badge-return">--</span>
+            </div>
           </div>
           <div class="card-value" id="val-return">--<span class="unit">°F</span></div>
-          <div class="card-sub">Air entering unit</div>
+          <div class="card-sub" id="sub-return">Air entering unit</div>
           <svg class="spark" id="spark-return" viewBox="0 0 180 32" preserveAspectRatio="none"></svg>
         </div>
-        <div class="sensor-card sim">
+        <div class="sensor-card sim" id="card-delta">
           <div class="card-header">
             <span class="card-label">Delta T</span>
-            <div class="card-badges"><span class="card-badge sim">Simulated</span><span class="card-badge" id="badge-delta">Good</span></div>
+            <div class="card-badges">
+              <span class="card-badge sim" id="source-delta">Simulated</span>
+              <span class="card-badge" id="badge-delta">--</span>
+            </div>
           </div>
           <div class="card-value" id="val-delta">--<span class="unit">°F</span></div>
           <div class="card-sub">Return minus supply</div>
@@ -666,7 +675,7 @@
         Database: Supabase (PostgreSQL)<br>
         Refresh interval: 30 seconds<br>
         Dashboard: GitHub Pages<br>
-        Sensors pending: HVAC temps (DS18B20), Leak sensors
+        Sensors pending: none — all sensors active
       </div>
     </div>
   </div>
@@ -727,7 +736,8 @@ const DEVICES = {
 const store = {
   basement: { hist: { temp: [], humid: [], labels: [] },
               live: { temp: [], humid: [], labels: [] },
-              lastTemp: null, lastHumid: null, lastSeen: null, lastLeak: false },
+              lastTemp: null, lastHumid: null, lastSeen: null, lastLeak: false,
+              lastSupply: null, lastReturn: null, lastDelta: null },
   upstairs: { hist: { temp: [], humid: [], labels: [] },
               live: { temp: [], humid: [], labels: [] },
               lastTemp: null, lastHumid: null, lastSeen: null },
@@ -806,7 +816,7 @@ async function fetchDevice(deviceKey) {
   const device = DEVICES[deviceKey];
   try {
     const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/sensor_readings?select=temp_f,humidity,leak,recorded_at&device_id=eq.${device.id}&order=recorded_at.desc&limit=1`,
+      `${SUPABASE_URL}/rest/v1/sensor_readings?select=temp_f,humidity,leak,supply_temp_f,return_temp_f,recorded_at&device_id=eq.${device.id}&order=recorded_at.desc&limit=1`,
       { headers: headers() }
     );
     if (!res.ok) return;
@@ -817,15 +827,21 @@ async function fetchDevice(deviceKey) {
     const humidity = parseFloat(row.humidity);
     const t        = new Date(row.recorded_at);
     const lbl      = t.getHours().toString().padStart(2,'0') + ':' + t.getMinutes().toString().padStart(2,'0');
-    const leak     = row.leak === true;
+    const leak      = row.leak === true;
+    const supplyF   = row.supply_temp_f != null ? parseFloat(row.supply_temp_f) : null;
+    const returnF   = row.return_temp_f != null ? parseFloat(row.return_temp_f) : null;
+    const deltaT    = (supplyF != null && returnF != null) ? Math.round((returnF - supplyF) * 10) / 10 : null;
     const thresh   = getThresholds();
     const tempWarn  = tempF < thresh.tempMin || tempF > thresh.tempMax;
     const humidWarn = humidity > thresh.humidMax;
 
     // Update store — append new live readings, keep hist untouched
-    store[deviceKey].lastTemp  = tempF;
-    store[deviceKey].lastHumid = humidity;
-    store[deviceKey].lastSeen  = t;
+    store[deviceKey].lastTemp   = tempF;
+    store[deviceKey].lastHumid  = humidity;
+    store[deviceKey].lastSeen   = t;
+    store[deviceKey].lastSupply = supplyF;
+    store[deviceKey].lastReturn = returnF;
+    store[deviceKey].lastDelta  = deltaT;
     store[deviceKey].live.temp.push(tempF);
     store[deviceKey].live.humid.push(humidity);
     store[deviceKey].live.labels.push(lbl);
@@ -867,6 +883,35 @@ async function fetchDevice(deviceKey) {
         leakSub.textContent = 'Floor drain sensor active';
       }
       store.basement.lastLeak = leak;
+    }
+
+    // HVAC UI (basement only)
+    if (deviceKey === 'basement') {
+      if (supplyF !== null) {
+        document.getElementById('val-supply').innerHTML = Math.round(supplyF) + '<span class="unit">°F</span>';
+        document.getElementById('badge-supply').textContent = 'Live';
+        document.getElementById('badge-supply').className = 'card-badge blue';
+        document.getElementById('card-supply').className = 'sensor-card basement';
+      }
+      if (returnF !== null) {
+        document.getElementById('val-return').innerHTML = Math.round(returnF) + '<span class="unit">°F</span>';
+        document.getElementById('badge-return').textContent = 'Live';
+        document.getElementById('badge-return').className = 'card-badge blue';
+        document.getElementById('card-return').className = 'sensor-card basement';
+      }
+      if (deltaT !== null) {
+        document.getElementById('val-delta').innerHTML = deltaT + '<span class="unit">°F</span>';
+        const deltaLow = deltaT < thresh.deltaMin;
+        document.getElementById('badge-delta').textContent = deltaLow ? 'Low' : 'Good';
+        document.getElementById('badge-delta').className = 'card-badge' + (deltaLow ? ' warn' : ' blue');
+        document.getElementById('card-delta').className = 'sensor-card' + (deltaLow ? ' status-warn' : ' basement');
+        // Remove simulated badge from delta card
+        const simBadge = document.querySelector('#card-delta .card-badge.sim');
+        if (simBadge) simBadge.remove();
+      }
+      store.basement.lastSupply = supplyF;
+      store.basement.lastReturn = returnF;
+      store.basement.lastDelta  = deltaT;
     }
 
     // Tab summary
