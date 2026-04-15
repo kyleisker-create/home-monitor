@@ -632,11 +632,15 @@
       <div class="settings-grid">
         <div class="settings-field">
           <label class="settings-label">Temp min (°F)</label>
-          <input type="number" class="settings-input" id="thresh-temp-min" value="60">
+          <input type="number" class="settings-input" id="thresh-temp-min" value="55">
         </div>
         <div class="settings-field">
           <label class="settings-label">Temp max (°F)</label>
-          <input type="number" class="settings-input" id="thresh-temp-max" value="82">
+          <input type="number" class="settings-input" id="thresh-temp-max" value="85">
+        </div>
+        <div class="settings-field">
+          <label class="settings-label">Humidity min (%)</label>
+          <input type="number" class="settings-input" id="thresh-humid-min" value="30">
         </div>
         <div class="settings-field">
           <label class="settings-label">Humidity max (%)</label>
@@ -734,8 +738,8 @@ const DEVICES = {
 // live = appended every 30s from fetchDevice (new readings only)
 // combined view = hist + live, deduped by label for chart display
 const store = {
-  basement: { hist: { temp: [], humid: [], labels: [] },
-              live: { temp: [], humid: [], labels: [] },
+  basement: { hist: { temp: [], humid: [], supply: [], return: [], labels: [] },
+              live: { temp: [], humid: [], supply: [], return: [], labels: [] },
               lastTemp: null, lastHumid: null, lastSeen: null, lastLeak: false,
               lastSupply: null, lastReturn: null, lastDelta: null },
   upstairs: { hist: { temp: [], humid: [], labels: [] },
@@ -833,7 +837,7 @@ async function fetchDevice(deviceKey) {
     const deltaT    = (supplyF != null && returnF != null) ? Math.round((returnF - supplyF) * 10) / 10 : null;
     const thresh   = getThresholds();
     const tempWarn  = tempF < thresh.tempMin || tempF > thresh.tempMax;
-    const humidWarn = humidity > thresh.humidMax;
+    const humidWarn = humidity < thresh.humidMin || humidity > thresh.humidMax;
 
     // Update store — append new live readings, keep hist untouched
     store[deviceKey].lastTemp   = tempF;
@@ -845,6 +849,12 @@ async function fetchDevice(deviceKey) {
     store[deviceKey].live.temp.push(tempF);
     store[deviceKey].live.humid.push(humidity);
     store[deviceKey].live.labels.push(lbl);
+    if (deviceKey === 'basement') {
+      store.basement.live.supply.push(supplyF);
+      store.basement.live.return.push(returnF);
+      if (store.basement.live.supply.length > POINTS) store.basement.live.supply.shift();
+      if (store.basement.live.return.length > POINTS) store.basement.live.return.shift();
+    }
     // Cap live array at 2880 points
     if (store[deviceKey].live.temp.length   > POINTS) store[deviceKey].live.temp.shift();
     if (store[deviceKey].live.humid.length  > POINTS) store[deviceKey].live.humid.shift();
@@ -855,7 +865,7 @@ async function fetchDevice(deviceKey) {
     document.getElementById(`val-${pfx}-temp`).innerHTML  = Math.round(tempF)    + '<span class="unit">°F</span>';
     document.getElementById(`val-${pfx}-humid`).innerHTML = Math.round(humidity) + '<span class="unit">%</span>';
     setBadge(`badge-${pfx}-temp`,  tempWarn,  tempWarn  ? (tempF < thresh.tempMin ? 'Low' : 'High') : 'Normal');
-    setBadge(`badge-${pfx}-humid`, humidWarn, humidWarn ? 'High' : 'Normal');
+    setBadge(`badge-${pfx}-humid`, humidWarn, humidWarn ? (humidity < thresh.humidMin ? 'Low' : 'High') : 'Normal');
     drawSpark(`spark-${pfx}-temp`,  combined(deviceKey, 'temp'),  device.color);
     drawSpark(`spark-${pfx}-humid`, combined(deviceKey, 'humid'), device.color);
 
@@ -892,12 +902,18 @@ async function fetchDevice(deviceKey) {
         document.getElementById('badge-supply').textContent = 'Live';
         document.getElementById('badge-supply').className = 'card-badge blue';
         document.getElementById('card-supply').className = 'sensor-card basement';
+        const simSupplyBadge = document.querySelector('#card-supply .card-badge.sim');
+        if (simSupplyBadge) simSupplyBadge.remove();
+        drawSpark('spark-supply', combined('basement', 'supply').filter(v => v != null), '#3d8ef8');
       }
       if (returnF !== null) {
         document.getElementById('val-return').innerHTML = Math.round(returnF) + '<span class="unit">°F</span>';
         document.getElementById('badge-return').textContent = 'Live';
         document.getElementById('badge-return').className = 'card-badge blue';
         document.getElementById('card-return').className = 'sensor-card basement';
+        const simReturnBadge = document.querySelector('#card-return .card-badge.sim');
+        if (simReturnBadge) simReturnBadge.remove();
+        drawSpark('spark-return', combined('basement', 'return').filter(v => v != null), '#f5a623');
       }
       if (deltaT !== null) {
         document.getElementById('val-delta').innerHTML = deltaT + '<span class="unit">°F</span>';
@@ -924,7 +940,7 @@ async function fetchDevice(deviceKey) {
 
     // Log alerts
     if (tempWarn)  logAlert(deviceKey, 'temp',  'warn', `${device.name} temperature ${tempF < thresh.tempMin ? 'below minimum' : 'above maximum'}`, tempF);
-    if (humidWarn) logAlert(deviceKey, 'humid', 'warn', `${device.name} humidity above maximum`, humidity);
+    if (humidWarn) logAlert(deviceKey, 'humid', 'warn', `${device.name} humidity ${humidity < thresh.humidMin ? 'below minimum' : 'above maximum'}`, humidity);
     if (leak)      logAlert(deviceKey, 'leak',  'warn', `${device.name} water leak detected`, null);
 
     if (chartsReady) updateChart(deviceKey);
@@ -957,9 +973,12 @@ async function fetchHistory() {
   const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
   for (const deviceKey of ['basement', 'upstairs']) {
     const device = DEVICES[deviceKey];
+    const selectFields = deviceKey === 'basement'
+      ? 'temp_f,humidity,supply_temp_f,return_temp_f,recorded_at'
+      : 'temp_f,humidity,recorded_at';
     try {
       const res = await fetch(
-        `${SUPABASE_URL}/rest/v1/sensor_readings?select=temp_f,humidity,recorded_at&device_id=eq.${device.id}&order=recorded_at.asc&recorded_at=gte.${since}&limit=2880`,
+        `${SUPABASE_URL}/rest/v1/sensor_readings?select=${selectFields}&device_id=eq.${device.id}&order=recorded_at.asc&recorded_at=gte.${since}&limit=2880`,
         { headers: { ...headers(), 'Range-Unit': 'items', 'Range': '0-2879' } }
       );
       if (!res.ok) continue;
@@ -968,11 +987,19 @@ async function fetchHistory() {
       store[deviceKey].hist.temp   = [];
       store[deviceKey].hist.humid  = [];
       store[deviceKey].hist.labels = [];
+      if (deviceKey === 'basement') {
+        store.basement.hist.supply = [];
+        store.basement.hist.return = [];
+      }
       data.forEach(row => {
         store[deviceKey].hist.temp.push(parseFloat(row.temp_f));
         store[deviceKey].hist.humid.push(parseFloat(row.humidity));
         const t = new Date(row.recorded_at);
         store[deviceKey].hist.labels.push(t.getHours().toString().padStart(2,'0') + ':' + t.getMinutes().toString().padStart(2,'0'));
+        if (deviceKey === 'basement') {
+          store.basement.hist.supply.push(row.supply_temp_f != null ? parseFloat(row.supply_temp_f) : null);
+          store.basement.hist.return.push(row.return_temp_f != null ? parseFloat(row.return_temp_f) : null);
+        }
       });
       const pfx = deviceKey === 'basement' ? 'b' : 'u';
       drawSpark(`spark-${pfx}-temp`,  combined(deviceKey, 'temp'),  device.color);
@@ -998,12 +1025,12 @@ function updateGlobalStatus() {
 
   const bWarn = !bOffline && (
     (store.basement.lastTemp  != null && (store.basement.lastTemp  < thresh.tempMin || store.basement.lastTemp  > thresh.tempMax)) ||
-    (store.basement.lastHumid != null && store.basement.lastHumid > thresh.humidMax) ||
+    (store.basement.lastHumid != null && (store.basement.lastHumid < thresh.humidMin || store.basement.lastHumid > thresh.humidMax)) ||
     store.basement.lastLeak === true
   );
   const uWarn = !uOffline && (
     (store.upstairs.lastTemp  != null && (store.upstairs.lastTemp  < thresh.tempMin || store.upstairs.lastTemp  > thresh.tempMax)) ||
-    (store.upstairs.lastHumid != null && store.upstairs.lastHumid > thresh.humidMax)
+    (store.upstairs.lastHumid != null && (store.upstairs.lastHumid < thresh.humidMin || store.upstairs.lastHumid > thresh.humidMax))
   );
 
   const dot     = document.getElementById('status-dot');
@@ -1143,8 +1170,9 @@ function drawSpark(id, data, color) {
 
 function getThresholds() {
   return {
-    tempMin:  parseFloat(document.getElementById('thresh-temp-min').value)  || 60,
-    tempMax:  parseFloat(document.getElementById('thresh-temp-max').value)  || 82,
+    tempMin:  parseFloat(document.getElementById('thresh-temp-min').value)  || 55,
+    tempMax:  parseFloat(document.getElementById('thresh-temp-max').value)  || 85,
+    humidMin: parseFloat(document.getElementById('thresh-humid-min').value) || 30,
     humidMax: parseFloat(document.getElementById('thresh-humid-max').value) || 55,
     deltaMin: parseFloat(document.getElementById('thresh-delta-min').value) || 12,
   };
@@ -1219,26 +1247,43 @@ function initCharts() {
     options: chartOpts
   });
 
+  const hvacSupplyData = combined('basement', 'supply').filter(v => v != null);
+  const hvacReturnData = combined('basement', 'return').filter(v => v != null);
+  const hvacLabels     = hvacSupplyData.length > 0 ? combined('basement', 'labels').slice(-hvacSupplyData.length) : simLabels;
+  const useRealHvac    = hvacSupplyData.length > 0;
+
   charts.hvac = new Chart(document.getElementById('chart-hvac').getContext('2d'), {
     type: 'line',
     data: {
-      labels: simLabels,
+      labels: hvacLabels,
       datasets: [
-        ds(simSupply, 'rgb(61,142,248)',  'Supply', false),
-        ds(simReturn, 'rgb(245,166,35)',  'Return', false),
+        ds(useRealHvac ? hvacSupplyData : simSupply, 'rgb(61,142,248)',  'Supply', false),
+        ds(useRealHvac ? hvacReturnData : simReturn, 'rgb(245,166,35)',  'Return', false),
       ]
     },
     options: chartOpts
   });
 
+  const deltaData   = useRealHvac
+    ? hvacSupplyData.map((s, i) => hvacReturnData[i] != null ? Math.round((hvacReturnData[i] - s) * 10) / 10 : null).filter(v => v != null)
+    : simDelta;
+
   charts.delta = new Chart(document.getElementById('chart-delta').getContext('2d'), {
     type: 'line',
     data: {
-      labels: simLabels,
-      datasets: [ds(simDelta, 'rgb(46,204,113)', 'Delta T', true)]
+      labels: hvacLabels,
+      datasets: [ds(deltaData, 'rgb(46,204,113)', 'Delta T', true)]
     },
     options: chartOpts
   });
+
+  // Update history chart titles to reflect data source
+  const hvacTitle  = document.querySelector('#chart-hvac').closest('.chart-card').querySelector('.chart-title');
+  const deltaTitle = document.querySelector('#chart-delta').closest('.chart-card').querySelector('.chart-title');
+  if (useRealHvac) {
+    hvacTitle.childNodes[0].textContent  = 'HVAC supply vs return';
+    deltaTitle.childNodes[0].textContent = 'Delta T';
+  }
 }
 
 function updateChart(deviceKey) {
@@ -1251,6 +1296,27 @@ function updateChart(deviceKey) {
   charts.humid.data.datasets[idx].data = combined(deviceKey, 'humid').slice(-pts);
   charts.temp.update('none');
   charts.humid.update('none');
+
+  // Refresh HVAC and delta charts with latest real data (basement only)
+  if (deviceKey === 'basement') {
+    const supplyArr = combined('basement', 'supply').filter(v => v != null);
+    const returnArr = combined('basement', 'return').filter(v => v != null);
+    if (supplyArr.length > 0) {
+      const hvacPts    = Math.min(supplyArr.length, returnArr.length);
+      const hvacLabels = combined('basement', 'labels').slice(-hvacPts);
+      charts.hvac.data.labels            = hvacLabels;
+      charts.hvac.data.datasets[0].data  = supplyArr.slice(-hvacPts);
+      charts.hvac.data.datasets[1].data  = returnArr.slice(-hvacPts);
+      const deltaArr = supplyArr.slice(-hvacPts).map((s, i) => {
+        const r = returnArr.slice(-hvacPts)[i];
+        return r != null ? Math.round((r - s) * 10) / 10 : null;
+      }).filter(v => v != null);
+      charts.delta.data.labels           = hvacLabels;
+      charts.delta.data.datasets[0].data = deltaArr;
+      charts.hvac.update('none');
+      charts.delta.update('none');
+    }
+  }
 }
 
 function setRange(btn, range, key) {
