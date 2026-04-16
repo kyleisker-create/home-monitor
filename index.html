@@ -484,8 +484,8 @@
             </div>
           </div>
           <div class="card-value" id="val-delta">--<span class="unit">°F</span></div>
-          <div class="card-sub">Return minus supply</div>
-          <div style="margin-top:10px;font-family:var(--font-mono);font-size:10px;color:var(--text-dim)">Ideal: 14–22°F</div>
+          <div class="card-sub" id="sub-delta">Supply vs return differential</div>
+          <div id="ideal-delta" style="margin-top:10px;font-family:var(--font-mono);font-size:10px;color:var(--text-dim)">Ideal: 14–22°F</div>
         </div>
       </div>
     </div>
@@ -831,6 +831,18 @@ function driftSim() {
   }
 }
 
+// ── HVAC MODE DETECTION ────────────────────────────────────────────────
+const IDLE_DELTA_THRESHOLD = 5; // °F — below this Delta T the system is considered idle
+
+function hvacMode(supplyF, returnF, deltaT) {
+  // TODO: incorporate airflow/pressure sensor (MPXV7002DP on GPIO xx) here when installed
+  // to confirm the system is actively blowing before assigning heating/cooling mode.
+  // For now, mode is inferred from probe temps alone.
+  if (deltaT === null) return 'unknown';
+  if (deltaT < IDLE_DELTA_THRESHOLD) return 'idle';
+  return supplyF > returnF ? 'heating' : 'cooling';
+}
+
 // ── FETCH REAL DATA ────────────────────────────────────────────────────
 const headers = () => ({ apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` });
 
@@ -852,7 +864,7 @@ async function fetchDevice(deviceKey) {
     const leak      = row.leak === true;
     const supplyF   = row.supply_temp_f != null ? parseFloat(row.supply_temp_f) : null;
     const returnF   = row.return_temp_f != null ? parseFloat(row.return_temp_f) : null;
-    const deltaT    = (supplyF != null && returnF != null) ? Math.round((returnF - supplyF) * 10) / 10 : null;
+    const deltaT    = (supplyF != null && returnF != null) ? Math.round(Math.abs(supplyF - returnF) * 10) / 10 : null;
     const thresh   = getThresholds();
     const tempWarn  = tempF < thresh.tempMin || tempF > thresh.tempMax;
     const humidWarn = humidity < thresh.humidMin || humidity > thresh.humidMax;
@@ -934,11 +946,36 @@ async function fetchDevice(deviceKey) {
         drawSpark('spark-return', combined('basement', 'return').filter(v => v != null), '#f5a623');
       }
       if (deltaT !== null) {
+        const mode     = hvacMode(supplyF, returnF, deltaT);
+        const deltaLow = mode !== 'idle' && deltaT < thresh.deltaMin;
+
         document.getElementById('val-delta').innerHTML = deltaT + '<span class="unit">°F</span>';
-        const deltaLow = deltaT < thresh.deltaMin;
-        document.getElementById('badge-delta').textContent = deltaLow ? 'Low' : 'Good';
-        document.getElementById('badge-delta').className = 'card-badge' + (deltaLow ? ' warn' : ' blue');
+
+        // Badge: reflects mode when running, Low/Good when idle is resolved
+        let badgeText, badgeClass;
+        if (mode === 'idle') {
+          badgeText  = 'Idle';
+          badgeClass = 'card-badge';
+        } else if (deltaLow) {
+          badgeText  = 'Low';
+          badgeClass = 'card-badge warn';
+        } else {
+          badgeText  = 'Good';
+          badgeClass = 'card-badge blue';
+        }
+        document.getElementById('badge-delta').textContent = badgeText;
+        document.getElementById('badge-delta').className   = badgeClass;
+
+        // Card accent
         document.getElementById('card-delta').className = 'sensor-card' + (deltaLow ? ' status-warn' : ' basement');
+
+        // Sub-label shows detected mode
+        const modeLabel = { heating: 'Heating mode', cooling: 'Cooling mode', idle: 'System idle — differential too small', unknown: 'Supply vs return differential' };
+        document.getElementById('sub-delta').textContent = modeLabel[mode] || modeLabel.unknown;
+
+        // Only show ideal range when system is actively running
+        document.getElementById('ideal-delta').style.display = mode === 'idle' ? 'none' : '';
+
         // Remove simulated badge from delta card
         const simBadge = document.querySelector('#card-delta .card-badge.sim');
         if (simBadge) simBadge.remove();
@@ -1283,7 +1320,7 @@ function initCharts() {
   });
 
   const deltaData   = useRealHvac
-    ? hvacSupplyData.map((s, i) => hvacReturnData[i] != null ? Math.round((hvacReturnData[i] - s) * 10) / 10 : null).filter(v => v != null)
+    ? hvacSupplyData.map((s, i) => hvacReturnData[i] != null ? Math.round(Math.abs(hvacReturnData[i] - s) * 10) / 10 : null).filter(v => v != null)
     : simDelta;
 
   charts.delta = new Chart(document.getElementById('chart-delta').getContext('2d'), {
@@ -1325,7 +1362,7 @@ function updateChart(deviceKey) {
       charts.hvac.data.datasets[1].data  = returnArr.slice(-hvacPts);
       const deltaArr = supplyArr.slice(-hvacPts).map((s, i) => {
         const r = returnArr.slice(-hvacPts)[i];
-        return r != null ? Math.round((r - s) * 10) / 10 : null;
+        return r != null ? Math.round(Math.abs(r - s) * 10) / 10 : null;
       }).filter(v => v != null);
       charts.delta.data.labels           = hvacLabels;
       charts.delta.data.datasets[0].data = deltaArr;
@@ -1366,7 +1403,7 @@ function setRange(btn, range, key) {
     if (useReal) {
       const deltaArr = supplyArr.slice(-hvacPts).map((s, i) => {
         const r = returnArr.slice(-hvacPts)[i];
-        return r != null ? Math.round((r - s) * 10) / 10 : null;
+        return r != null ? Math.round(Math.abs(r - s) * 10) / 10 : null;
       }).filter(v => v != null);
       charts.delta.data.labels           = combined('basement', 'labels').slice(-hvacPts);
       charts.delta.data.datasets[0].data = deltaArr;
