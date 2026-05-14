@@ -1144,10 +1144,6 @@ function updateGlobalStatus() {
     (store.groundlevel.lastTemp  != null && (store.groundlevel.lastTemp  < thresh.tempMin || store.groundlevel.lastTemp  > thresh.tempMax)) ||
     (store.groundlevel.lastHumid != null && (store.groundlevel.lastHumid < thresh.humidMin || store.groundlevel.lastHumid > thresh.humidMax))
   );
-  const uWarn = !uOffline && (
-    (store.upstairs.lastTemp  != null && (store.upstairs.lastTemp  < thresh.tempMin || store.upstairs.lastTemp  > thresh.tempMax)) ||
-    (store.upstairs.lastHumid != null && (store.upstairs.lastHumid < thresh.humidMin || store.upstairs.lastHumid > thresh.humidMax))
-  );
 
   const dot     = document.getElementById('status-dot');
   const txt     = document.getElementById('status-text');
