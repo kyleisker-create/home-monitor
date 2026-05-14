@@ -975,12 +975,18 @@ async function fetchDevice(deviceKey) {
         document.getElementById('badge-supply').textContent = 'Live';
         document.getElementById('badge-supply').className = 'card-badge blue';
         document.getElementById('card-supply').className = 'sensor-card basement';
+        const simSupplyBadge = document.getElementById('source-supply');
+        if (simSupplyBadge) simSupplyBadge.remove();
+        drawSpark('spark-supply', combined('basement', 'supply').filter(v => v != null), '#3d8ef8');
       }
       if (returnF !== null) {
         document.getElementById('val-return').innerHTML = Math.round(returnF) + '<span class="unit">°F</span>';
         document.getElementById('badge-return').textContent = 'Live';
         document.getElementById('badge-return').className = 'card-badge blue';
         document.getElementById('card-return').className = 'sensor-card basement';
+        const simReturnBadge = document.getElementById('source-return');
+        if (simReturnBadge) simReturnBadge.remove();
+        drawSpark('spark-return', combined('basement', 'return').filter(v => v != null), '#f5a623');
       }
       if (deltaT !== null) {
         const mode     = hvacMode(supplyF, returnF, deltaT);
@@ -1413,7 +1419,7 @@ function updateChart(deviceKey) {
 function setRange(btn, range, key) {
   btn.parentElement.querySelectorAll('.range-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
-  const pts = Math.min(ptsForRange(range), combined('basement', 'labels').length) || ptsForRange(range);
+  const pts = ptsForRange(range);
   if (key === 'temp') {
     charts.temp.data.labels = combined('basement', 'labels').slice(-pts);
     charts.temp.data.datasets[0].data = combined('basement', 'temp').slice(-pts);
