@@ -27,6 +27,7 @@
     --accent-cyan:   #22d3c8;
     --accent-amber:  #f5a623;
     --accent-purple: #a78bfa;
+    --accent-green:  #2ecc71;
     --ok:            #2ecc71;
     --warn:          #f5a623;
     --danger:        #f04040;
@@ -128,12 +129,17 @@
     border-color: var(--accent-cyan);
     background: rgba(34,211,200,0.08);
   }
+  .device-tab.groundlevel.active {
+    border-color: var(--accent-green);
+    background: rgba(46,204,113,0.08);
+  }
   .tab-dot {
     width: 8px; height: 8px; border-radius: 50%;
     background: var(--text-dim); flex-shrink: 0;
   }
   .device-tab.active .tab-dot       { background: var(--accent-blue); box-shadow: 0 0 5px var(--accent-blue); }
   .device-tab.active.upstairs .tab-dot { background: var(--accent-purple); box-shadow: 0 0 5px var(--accent-purple); }
+  .device-tab.active.groundlevel .tab-dot { background: var(--accent-green); box-shadow: 0 0 5px var(--accent-green); }
   .device-tab.all.active .tab-dot   { background: var(--accent-cyan); box-shadow: 0 0 5px var(--accent-cyan); }
   .tab-reading {
     font-family: var(--font-mono); font-size: 11px;
@@ -169,6 +175,7 @@
   }
   .sensor-card.basement { --card-accent: var(--accent-blue); }
   .sensor-card.upstairs { --card-accent: var(--accent-purple); }
+  .sensor-card.groundlevel { --card-accent: var(--accent-green); }
   .sensor-card.sim      { --card-accent: var(--accent-amber); }
   .sensor-card.status-warn { --card-accent: var(--warn); }
   .card-header {
@@ -227,6 +234,7 @@
   .device-pip { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
   .device-pip.basement { background: var(--accent-blue); }
   .device-pip.upstairs { background: var(--accent-purple); }
+  .device-pip.groundlevel { background: var(--accent-green); }
   .comparison-value {
     font-family: var(--font-mono); font-size: 20px; font-weight: 300;
   }
@@ -406,6 +414,11 @@
         Upstairs
         <span class="tab-reading" id="tab-reading-upstairs">--°F</span>
       </button>
+      <button class="device-tab groundlevel" id="tab-groundlevel" onclick="switchDevice('groundlevel')">
+        <div class="tab-dot"></div>
+        Ground level
+        <span class="tab-reading" id="tab-reading-groundlevel">--°F</span>
+      </button>
       <button class="device-tab all" id="tab-all" onclick="switchDevice('all')">
         <div class="tab-dot"></div>
         All devices
@@ -521,6 +534,37 @@
       </div>
     </div>
 
+    <!-- Ground level view -->
+    <div id="view-groundlevel" style="display:none">
+      <div class="section-label">Ground level ESP32 — live readings</div>
+      <div class="sensor-grid">
+        <div class="sensor-card groundlevel" id="card-g-temp">
+          <div class="card-header">
+            <span class="card-label">Temperature</span>
+            <div class="card-badges">
+              <span class="card-badge" style="background:rgba(46,204,113,0.12);color:var(--accent-green);border-color:rgba(46,204,113,0.2)">Ground level</span>
+              <span class="card-badge" id="badge-g-temp">--</span>
+            </div>
+          </div>
+          <div class="card-value" id="val-g-temp">--<span class="unit">°F</span></div>
+          <div class="card-sub">DHT22 — ground level</div>
+          <svg class="spark" id="spark-g-temp" viewBox="0 0 180 32" preserveAspectRatio="none"></svg>
+        </div>
+        <div class="sensor-card groundlevel" id="card-g-humid">
+          <div class="card-header">
+            <span class="card-label">Humidity</span>
+            <div class="card-badges">
+              <span class="card-badge" style="background:rgba(46,204,113,0.12);color:var(--accent-green);border-color:rgba(46,204,113,0.2)">Ground level</span>
+              <span class="card-badge" id="badge-g-humid">--</span>
+            </div>
+          </div>
+          <div class="card-value" id="val-g-humid">--<span class="unit">%</span></div>
+          <div class="card-sub">Comfort range: 30–50%</div>
+          <svg class="spark" id="spark-g-humid" viewBox="0 0 180 32" preserveAspectRatio="none"></svg>
+        </div>
+      </div>
+    </div>
+
     <!-- All devices view -->
     <div id="view-all" style="display:none">
       <div class="section-label">All devices — comparison</div>
@@ -541,6 +585,13 @@
             </div>
             <div class="comparison-value" id="all-u-temp">--<span class="unit">°F</span></div>
           </div>
+          <div class="comparison-row">
+            <div class="comparison-device">
+              <div class="device-pip groundlevel"></div>
+              Ground level
+            </div>
+            <div class="comparison-value" id="all-g-temp">--<span class="unit">°F</span></div>
+          </div>
           <div style="margin-top:12px;font-family:var(--font-mono);font-size:10px;color:var(--text-dim)" id="all-temp-diff"></div>
         </div>
         <div class="comparison-card" style="--card-accent: var(--accent-cyan)">
@@ -558,6 +609,13 @@
               Upstairs
             </div>
             <div class="comparison-value" id="all-u-humid">--<span class="unit">%</span></div>
+          </div>
+          <div class="comparison-row">
+            <div class="comparison-device">
+              <div class="device-pip groundlevel"></div>
+              Ground level
+            </div>
+            <div class="comparison-value" id="all-g-humid">--<span class="unit">%</span></div>
           </div>
           <div style="margin-top:12px;font-family:var(--font-mono);font-size:10px;color:var(--text-dim)" id="all-humid-diff"></div>
         </div>
@@ -583,6 +641,7 @@
         <div class="chart-legend">
           <div class="legend-item"><div class="legend-line" style="background:#3d8ef8"></div>Basement</div>
           <div class="legend-item"><div class="legend-line" style="background:#a78bfa"></div>Upstairs</div>
+          <div class="legend-item"><div class="legend-line" style="background:#2ecc71"></div>Ground level</div>
         </div>
       </div>
       <div class="chart-card">
@@ -598,6 +657,7 @@
         <div class="chart-legend">
           <div class="legend-item"><div class="legend-line" style="background:#3d8ef8"></div>Basement</div>
           <div class="legend-item"><div class="legend-line" style="background:#a78bfa"></div>Upstairs</div>
+          <div class="legend-item"><div class="legend-line" style="background:#2ecc71"></div>Ground level</div>
         </div>
       </div>
       <div class="chart-card">
@@ -683,24 +743,30 @@
         <span class="device-status-time" id="status-upstairs">--</span>
         <span class="online-badge" id="online-upstairs">--</span>
       </div>
+      <div class="device-status-row">
+        <div class="device-pip groundlevel"></div>
+        <div class="device-status-name">Ground Level ESP32</div>
+        <span class="device-status-time" id="status-groundlevel">--</span>
+        <span class="online-badge" id="online-groundlevel">--</span>
+      </div>
     </div>
 
     <div class="section-label">System info</div>
     <div class="settings-panel">
       <div class="settings-info">
-        Sensors: DHT22 on GPIO 4 (both devices)<br>
+        Sensors: DHT22 on GPIO 4 (all devices)<br>
         Network: Indestructibles<br>
         Database: Supabase (PostgreSQL)<br>
         Refresh interval: 30 seconds<br>
         Dashboard: GitHub Pages<br>
-        Sensors pending: none — all sensors active
+        Devices: Basement, Upstairs, Ground Level
       </div>
     </div>
   </div>
 
 </main>
 
-<footer>HOME MONITOR &nbsp;&#183;&nbsp; 2 DEVICES ACTIVE &nbsp;&#183;&nbsp; UPDATES EVERY 30 SECONDS</footer>
+<footer>HOME MONITOR &nbsp;&#183;&nbsp; 3 DEVICES ACTIVE &nbsp;&#183;&nbsp; UPDATES EVERY 30 SECONDS</footer>
 
 <nav class="mobile-nav">
   <button class="nav-btn active" id="nav-live" onclick="showSection('live')">
@@ -743,8 +809,9 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 // ───────────────────────────────────────────────────────────────────────
 
 const DEVICES = {
-  basement: { id: 'esp32_basement', name: 'Basement ESP32', color: '#3d8ef8' },
-  upstairs: { id: 'esp32_upstairs', name: 'Upstairs ESP32', color: '#a78bfa' },
+  basement:    { id: 'esp32_basement',    name: 'Basement ESP32',    color: '#3d8ef8' },
+  upstairs:    { id: 'esp32_upstairs',    name: 'Upstairs ESP32',    color: '#a78bfa' },
+  groundlevel: { id: 'esp32_groundlevel', name: 'Ground Level ESP32', color: '#2ecc71' },
 };
 
 // Per-device data stores
@@ -759,6 +826,9 @@ const store = {
   upstairs: { hist: { temp: [], humid: [], labels: [] },
               live: { temp: [], humid: [], labels: [] },
               lastTemp: null, lastHumid: null, lastSeen: null },
+  groundlevel: { hist: { temp: [], humid: [], labels: [] },
+                 live: { temp: [], humid: [], labels: [] },
+                 lastTemp: null, lastHumid: null, lastSeen: null },
 };
 
 // Helper: returns combined hist + live arrays for a device
@@ -790,9 +860,10 @@ function switchDevice(device) {
   activeDevice = device;
   document.querySelectorAll('.device-tab').forEach(t => t.classList.remove('active'));
   document.getElementById('tab-' + device).classList.add('active');
-  document.getElementById('view-basement').style.display = device === 'basement' ? 'block' : 'none';
-  document.getElementById('view-upstairs').style.display = device === 'upstairs' ? 'block' : 'none';
-  document.getElementById('view-all').style.display      = device === 'all'      ? 'block' : 'none';
+  document.getElementById('view-basement').style.display   = device === 'basement'    ? 'block' : 'none';
+  document.getElementById('view-upstairs').style.display   = device === 'upstairs'    ? 'block' : 'none';
+  document.getElementById('view-groundlevel').style.display = device === 'groundlevel' ? 'block' : 'none';
+  document.getElementById('view-all').style.display        = device === 'all'         ? 'block' : 'none';
 }
 
 // ── SIMULATED DATA (HVAC) ──────────────────────────────────────────────
@@ -820,7 +891,6 @@ function driftSim() {
   simReturn.push(Math.round(simState.ret    * 10) / 10); simReturn.shift();
   simDelta.push(delta); simDelta.shift();
   simLabels.push(new Date().toTimeString().slice(0,5)); simLabels.shift();
-  // Only update live card values and sparks with simulated data if real probe data has not arrived
   const hasRealData = store.basement.lastSupply != null;
   if (!hasRealData) {
     document.getElementById('val-supply').innerHTML = Math.round(simState.supply) + '<span class="unit">°F</span>';
@@ -837,7 +907,6 @@ const IDLE_DELTA_THRESHOLD = 5; // °F — below this Delta T the system is cons
 function hvacMode(supplyF, returnF, deltaT) {
   // TODO: incorporate airflow/pressure sensor (MPXV7002DP on GPIO xx) here when installed
   // to confirm the system is actively blowing before assigning heating/cooling mode.
-  // For now, mode is inferred from probe temps alone.
   if (deltaT === null) return 'unknown';
   if (deltaT < IDLE_DELTA_THRESHOLD) return 'idle';
   return supplyF > returnF ? 'heating' : 'cooling';
@@ -873,25 +942,25 @@ async function fetchDevice(deviceKey) {
     store[deviceKey].lastTemp   = tempF;
     store[deviceKey].lastHumid  = humidity;
     store[deviceKey].lastSeen   = t;
-    store[deviceKey].lastSupply = supplyF;
-    store[deviceKey].lastReturn = returnF;
-    store[deviceKey].lastDelta  = deltaT;
-    store[deviceKey].live.temp.push(tempF);
-    store[deviceKey].live.humid.push(humidity);
-    store[deviceKey].live.labels.push(lbl);
     if (deviceKey === 'basement') {
+      store.basement.lastSupply = supplyF;
+      store.basement.lastReturn = returnF;
+      store.basement.lastDelta  = deltaT;
       store.basement.live.supply.push(supplyF);
       store.basement.live.return.push(returnF);
       if (store.basement.live.supply.length > POINTS) store.basement.live.supply.shift();
       if (store.basement.live.return.length > POINTS) store.basement.live.return.shift();
     }
+    store[deviceKey].live.temp.push(tempF);
+    store[deviceKey].live.humid.push(humidity);
+    store[deviceKey].live.labels.push(lbl);
     // Cap live array at 2880 points
     if (store[deviceKey].live.temp.length   > POINTS) store[deviceKey].live.temp.shift();
     if (store[deviceKey].live.humid.length  > POINTS) store[deviceKey].live.humid.shift();
     if (store[deviceKey].live.labels.length > POINTS) store[deviceKey].live.labels.shift();
 
     // Update UI
-    const pfx = deviceKey === 'basement' ? 'b' : 'u';
+    const pfx = deviceKey === 'basement' ? 'b' : deviceKey === 'upstairs' ? 'u' : 'g';
     document.getElementById(`val-${pfx}-temp`).innerHTML  = Math.round(tempF)    + '<span class="unit">°F</span>';
     document.getElementById(`val-${pfx}-humid`).innerHTML = Math.round(humidity) + '<span class="unit">%</span>';
     setBadge(`badge-${pfx}-temp`,  tempWarn,  tempWarn  ? (tempF < thresh.tempMin ? 'Low' : 'High') : 'Normal');
@@ -932,26 +1001,17 @@ async function fetchDevice(deviceKey) {
         document.getElementById('badge-supply').textContent = 'Live';
         document.getElementById('badge-supply').className = 'card-badge blue';
         document.getElementById('card-supply').className = 'sensor-card basement';
-        const simSupplyBadge = document.querySelector('#card-supply .card-badge.sim');
-        if (simSupplyBadge) simSupplyBadge.remove();
-        drawSpark('spark-supply', combined('basement', 'supply').filter(v => v != null), '#3d8ef8');
       }
       if (returnF !== null) {
         document.getElementById('val-return').innerHTML = Math.round(returnF) + '<span class="unit">°F</span>';
         document.getElementById('badge-return').textContent = 'Live';
         document.getElementById('badge-return').className = 'card-badge blue';
         document.getElementById('card-return').className = 'sensor-card basement';
-        const simReturnBadge = document.querySelector('#card-return .card-badge.sim');
-        if (simReturnBadge) simReturnBadge.remove();
-        drawSpark('spark-return', combined('basement', 'return').filter(v => v != null), '#f5a623');
       }
       if (deltaT !== null) {
         const mode     = hvacMode(supplyF, returnF, deltaT);
         const deltaLow = mode !== 'idle' && deltaT < thresh.deltaMin;
-
         document.getElementById('val-delta').innerHTML = deltaT + '<span class="unit">°F</span>';
-
-        // Badge: reflects mode when running, Low/Good when idle is resolved
         let badgeText, badgeClass;
         if (mode === 'idle') {
           badgeText  = 'Idle';
@@ -965,18 +1025,10 @@ async function fetchDevice(deviceKey) {
         }
         document.getElementById('badge-delta').textContent = badgeText;
         document.getElementById('badge-delta').className   = badgeClass;
-
-        // Card accent
         document.getElementById('card-delta').className = 'sensor-card' + (deltaLow ? ' status-warn' : ' basement');
-
-        // Sub-label shows detected mode
         const modeLabel = { heating: 'Heating mode', cooling: 'Cooling mode', idle: 'System idle — differential too small', unknown: 'Supply vs return differential' };
         document.getElementById('sub-delta').textContent = modeLabel[mode] || modeLabel.unknown;
-
-        // Only show ideal range when system is actively running
         document.getElementById('ideal-delta').style.display = mode === 'idle' ? 'none' : '';
-
-        // Remove simulated badge from delta card
         const simBadge = document.querySelector('#card-delta .card-badge.sim');
         if (simBadge) simBadge.remove();
       }
@@ -996,7 +1048,7 @@ async function fetchDevice(deviceKey) {
     // Log alerts
     if (tempWarn)  logAlert(deviceKey, 'temp',  'warn', `${device.name} temperature ${tempF < thresh.tempMin ? 'below minimum' : 'above maximum'}`, tempF);
     if (humidWarn) logAlert(deviceKey, 'humid', 'warn', `${device.name} humidity ${humidity < thresh.humidMin ? 'below minimum' : 'above maximum'}`, humidity);
-    if (leak)      logAlert(deviceKey, 'leak',  'warn', `${device.name} water leak detected`, null);
+    if (deviceKey === 'basement' && leak) logAlert(deviceKey, 'leak', 'warn', `${device.name} water leak detected`, null);
 
     if (chartsReady) updateChart(deviceKey);
 
@@ -1004,29 +1056,30 @@ async function fetchDevice(deviceKey) {
 }
 
 function updateComparison() {
-  const bt = store.basement.lastTemp, ut = store.upstairs.lastTemp;
-  const bh = store.basement.lastHumid, uh = store.upstairs.lastHumid;
-  if (bt != null && ut != null) {
-    const diff = Math.round((ut - bt) * 10) / 10;
-    document.getElementById('all-temp-diff').textContent =
-      diff === 0 ? 'Same temperature' : `Upstairs is ${Math.abs(diff)}°F ${diff > 0 ? 'warmer' : 'cooler'}`;
+  const bt = store.basement.lastTemp, ut = store.upstairs.lastTemp, gt = store.groundlevel.lastTemp;
+  const bh = store.basement.lastHumid, uh = store.upstairs.lastHumid, gh = store.groundlevel.lastHumid;
+  // Show range across all available devices
+  const temps  = [bt, ut, gt].filter(v => v != null);
+  const humids = [bh, uh, gh].filter(v => v != null);
+  if (temps.length > 1) {
+    const minT = Math.min(...temps), maxT = Math.max(...temps);
+    document.getElementById('all-temp-diff').textContent = `Range: ${Math.round(minT)}°F – ${Math.round(maxT)}°F across active devices`;
   }
-  if (bh != null && uh != null) {
-    const diff = Math.round((uh - bh) * 10) / 10;
-    document.getElementById('all-humid-diff').textContent =
-      diff === 0 ? 'Same humidity' : `Upstairs is ${Math.abs(diff)}% ${diff > 0 ? 'more' : 'less'} humid`;
+  if (humids.length > 1) {
+    const minH = Math.min(...humids), maxH = Math.max(...humids);
+    document.getElementById('all-humid-diff').textContent = `Range: ${Math.round(minH)}% – ${Math.round(maxH)}% across active devices`;
   }
 }
 
 async function fetchAllDevices() {
-  await Promise.all([fetchDevice('basement'), fetchDevice('upstairs')]);
+  await Promise.all([fetchDevice('basement'), fetchDevice('upstairs'), fetchDevice('groundlevel')]);
   updateGlobalStatus();
   document.getElementById('last-update').textContent = 'Updated ' + new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
 }
 
 async function fetchHistory() {
   const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-  for (const deviceKey of ['basement', 'upstairs']) {
+  for (const deviceKey of ['basement', 'upstairs', 'groundlevel']) {
     const device = DEVICES[deviceKey];
     const selectFields = deviceKey === 'basement'
       ? 'temp_f,humidity,supply_temp_f,return_temp_f,recorded_at'
@@ -1038,7 +1091,6 @@ async function fetchHistory() {
       );
       if (!res.ok) continue;
       const data = await res.json();
-      // Clear and repopulate hist — never append to avoid duplicates
       store[deviceKey].hist.temp   = [];
       store[deviceKey].hist.humid  = [];
       store[deviceKey].hist.labels = [];
@@ -1056,7 +1108,7 @@ async function fetchHistory() {
           store.basement.hist.return.push(row.return_temp_f != null ? parseFloat(row.return_temp_f) : null);
         }
       });
-      const pfx = deviceKey === 'basement' ? 'b' : 'u';
+      const pfx = deviceKey === 'basement' ? 'b' : deviceKey === 'upstairs' ? 'u' : 'g';
       drawSpark(`spark-${pfx}-temp`,  combined(deviceKey, 'temp'),  device.color);
       drawSpark(`spark-${pfx}-humid`, combined(deviceKey, 'humid'), device.color);
     } catch(e) { console.error(`History error (${deviceKey}):`, e); }
@@ -1077,11 +1129,20 @@ function updateGlobalStatus() {
 
   const bOffline = isOffline('basement');
   const uOffline = isOffline('upstairs');
+  const gOffline = isOffline('groundlevel');
 
   const bWarn = !bOffline && (
     (store.basement.lastTemp  != null && (store.basement.lastTemp  < thresh.tempMin || store.basement.lastTemp  > thresh.tempMax)) ||
     (store.basement.lastHumid != null && (store.basement.lastHumid < thresh.humidMin || store.basement.lastHumid > thresh.humidMax)) ||
     store.basement.lastLeak === true
+  );
+  const uWarn = !uOffline && (
+    (store.upstairs.lastTemp  != null && (store.upstairs.lastTemp  < thresh.tempMin || store.upstairs.lastTemp  > thresh.tempMax)) ||
+    (store.upstairs.lastHumid != null && (store.upstairs.lastHumid < thresh.humidMin || store.upstairs.lastHumid > thresh.humidMax))
+  );
+  const gWarn = !gOffline && (
+    (store.groundlevel.lastTemp  != null && (store.groundlevel.lastTemp  < thresh.tempMin || store.groundlevel.lastTemp  > thresh.tempMax)) ||
+    (store.groundlevel.lastHumid != null && (store.groundlevel.lastHumid < thresh.humidMin || store.groundlevel.lastHumid > thresh.humidMax))
   );
   const uWarn = !uOffline && (
     (store.upstairs.lastTemp  != null && (store.upstairs.lastTemp  < thresh.tempMin || store.upstairs.lastTemp  > thresh.tempMax)) ||
@@ -1094,18 +1155,17 @@ function updateGlobalStatus() {
   const bannerT = document.getElementById('alert-banner-text');
 
   // Offline takes priority over threshold warnings
-  if (bOffline || uOffline) {
-    const who = bOffline && uOffline ? 'Basement and Upstairs ESP32s are'
-              : bOffline ? 'Basement ESP32 is'
-              : 'Upstairs ESP32 is';
+  if (bOffline || uOffline || gOffline) {
+    const offlineNames = [bOffline && 'Basement', uOffline && 'Upstairs', gOffline && 'Ground Level'].filter(Boolean);
+    const who = offlineNames.join(', ') + (offlineNames.length > 1 ? ' ESP32s are' : ' ESP32 is');
     dot.className = 'status-dot danger';
     txt.textContent = 'Device offline';
     banner.classList.add('visible');
     bannerT.textContent = who + ' not responding — check power and Wi-Fi';
 
     // Mark the offline card visually
-    ['basement', 'upstairs'].forEach(dk => {
-      const pfx  = dk === 'basement' ? 'b' : 'u';
+    ['basement', 'upstairs', 'groundlevel'].forEach(dk => {
+      const pfx  = dk === 'basement' ? 'b' : dk === 'upstairs' ? 'u' : 'g';
       const card = document.getElementById(`card-${pfx}-temp`);
       if (!card) return;
       if (isOffline(dk)) {
@@ -1114,11 +1174,12 @@ function updateGlobalStatus() {
       }
     });
 
-  } else if (bWarn || uWarn) {
+  } else if (bWarn || uWarn || gWarn) {
     dot.className = 'status-dot warn';
     txt.textContent = 'Warning';
     banner.classList.add('visible');
-    const who = bWarn && uWarn ? 'Both devices' : bWarn ? 'Basement' : 'Upstairs';
+    const warnNames = [bWarn && 'Basement', uWarn && 'Upstairs', gWarn && 'Ground Level'].filter(Boolean);
+    const who = warnNames.join(', ');
     const leakMsg = store.basement.lastLeak ? ' — water leak detected' : ' — threshold exceeded';
     bannerT.textContent = who + leakMsg;
 
@@ -1133,7 +1194,7 @@ function updateGlobalStatus() {
 }
 
 function updateDeviceStatus() {
-  for (const deviceKey of ['basement', 'upstairs']) {
+  for (const deviceKey of ['basement', 'upstairs', 'groundlevel']) {
     const seen  = store[deviceKey].lastSeen;
     const el    = document.getElementById(`status-${deviceKey}`);
     const badge = document.getElementById(`online-${deviceKey}`);
@@ -1187,9 +1248,10 @@ async function fetchAlerts() {
     list.innerHTML = data.map(a => {
       const t = new Date(a.created_at);
       const timeStr = t.toLocaleDateString([],{month:'short',day:'numeric'}) + ' ' + t.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
-      const isBasement = a.device_id === 'esp32_basement';
-      const pipColor   = isBasement ? '#3d8ef8' : '#a78bfa';
-      const deviceName = isBasement ? 'Basement' : 'Upstairs';
+      const isBasement    = a.device_id === 'esp32_basement';
+      const isGroundLevel = a.device_id === 'esp32_groundlevel';
+      const pipColor   = isBasement ? '#3d8ef8' : isGroundLevel ? '#2ecc71' : '#a78bfa';
+      const deviceName = isBasement ? 'Basement' : isGroundLevel ? 'Ground Level' : 'Upstairs';
       return `<div class="alert-row">
         <span class="alert-time">${timeStr}</span>
         <div class="alert-device-pip" style="background:${pipColor};box-shadow:0 0 4px ${pipColor}"></div>
@@ -1225,9 +1287,8 @@ function drawSpark(id, data, color) {
 
 function getThresholds() {
   return {
-    tempMin:  parseFloat(document.getElementById('thresh-temp-min').value)  || 55,
-    tempMax:  parseFloat(document.getElementById('thresh-temp-max').value)  || 85,
-    humidMin: parseFloat(document.getElementById('thresh-humid-min').value) || 30,
+    tempMin:  parseFloat(document.getElementById('thresh-temp-min').value)  || 60,
+    tempMax:  parseFloat(document.getElementById('thresh-temp-max').value)  || 82,
     humidMax: parseFloat(document.getElementById('thresh-humid-max').value) || 55,
     deltaMin: parseFloat(document.getElementById('thresh-delta-min').value) || 12,
   };
@@ -1283,8 +1344,9 @@ function initCharts() {
     data: {
       labels: combined('basement', 'labels').slice(-pts),
       datasets: [
-        ds(combined('basement', 'temp').slice(-pts),  'rgb(61,142,248)',  'Basement °F', false),
-        ds(combined('upstairs', 'temp').slice(-pts),  'rgb(167,139,250)', 'Upstairs °F', false),
+        ds(combined('basement', 'temp').slice(-pts),     'rgb(61,142,248)',  'Basement °F',    false),
+        ds(combined('upstairs', 'temp').slice(-pts),     'rgb(167,139,250)', 'Upstairs °F',    false),
+        ds(combined('groundlevel', 'temp').slice(-pts),  'rgb(46,204,113)',  'Ground Level °F',false),
       ]
     },
     options: chartOpts
@@ -1295,8 +1357,9 @@ function initCharts() {
     data: {
       labels: combined('basement', 'labels').slice(-pts),
       datasets: [
-        ds(combined('basement', 'humid').slice(-pts), 'rgb(61,142,248)',  'Basement %', false),
-        ds(combined('upstairs', 'humid').slice(-pts), 'rgb(167,139,250)', 'Upstairs %', false),
+        ds(combined('basement', 'humid').slice(-pts),    'rgb(61,142,248)',  'Basement %',    false),
+        ds(combined('upstairs', 'humid').slice(-pts),    'rgb(167,139,250)', 'Upstairs %',    false),
+        ds(combined('groundlevel', 'humid').slice(-pts), 'rgb(46,204,113)',  'Ground Level %',false),
       ]
     },
     options: chartOpts
@@ -1312,14 +1375,14 @@ function initCharts() {
     data: {
       labels: hvacLabels,
       datasets: [
-        ds(useRealHvac ? hvacSupplyData : simSupply, 'rgb(61,142,248)',  'Supply', false),
-        ds(useRealHvac ? hvacReturnData : simReturn, 'rgb(245,166,35)',  'Return', false),
+        ds(useRealHvac ? hvacSupplyData : simSupply, 'rgb(61,142,248)', 'Supply', false),
+        ds(useRealHvac ? hvacReturnData : simReturn, 'rgb(245,166,35)', 'Return', false),
       ]
     },
     options: chartOpts
   });
 
-  const deltaData   = useRealHvac
+  const deltaData = useRealHvac
     ? hvacSupplyData.map((s, i) => hvacReturnData[i] != null ? Math.round(Math.abs(hvacReturnData[i] - s) * 10) / 10 : null).filter(v => v != null)
     : simDelta;
 
@@ -1332,7 +1395,6 @@ function initCharts() {
     options: chartOpts
   });
 
-  // Update history chart titles to reflect data source
   if (useRealHvac) {
     document.getElementById('chart-hvac-title').textContent  = 'HVAC supply vs return';
     document.getElementById('chart-delta-title').textContent = 'Delta T';
@@ -1341,7 +1403,7 @@ function initCharts() {
 
 function updateChart(deviceKey) {
   if (!chartsReady) return;
-  const idx = deviceKey === 'basement' ? 0 : 1;
+  const idx = deviceKey === 'basement' ? 0 : deviceKey === 'upstairs' ? 1 : 2;
   const pts = charts.temp.data.labels.length;
   charts.temp.data.labels = combined('basement', 'labels').slice(-pts);
   charts.temp.data.datasets[idx].data  = combined(deviceKey, 'temp').slice(-pts);
@@ -1357,9 +1419,9 @@ function updateChart(deviceKey) {
     if (supplyArr.length > 0) {
       const hvacPts    = Math.min(supplyArr.length, returnArr.length);
       const hvacLabels = combined('basement', 'labels').slice(-hvacPts);
-      charts.hvac.data.labels            = hvacLabels;
-      charts.hvac.data.datasets[0].data  = supplyArr.slice(-hvacPts);
-      charts.hvac.data.datasets[1].data  = returnArr.slice(-hvacPts);
+      charts.hvac.data.labels           = hvacLabels;
+      charts.hvac.data.datasets[0].data = supplyArr.slice(-hvacPts);
+      charts.hvac.data.datasets[1].data = returnArr.slice(-hvacPts);
       const deltaArr = supplyArr.slice(-hvacPts).map((s, i) => {
         const r = returnArr.slice(-hvacPts)[i];
         return r != null ? Math.round(Math.abs(r - s) * 10) / 10 : null;
@@ -1380,20 +1442,22 @@ function setRange(btn, range, key) {
     charts.temp.data.labels = combined('basement', 'labels').slice(-pts);
     charts.temp.data.datasets[0].data = combined('basement', 'temp').slice(-pts);
     charts.temp.data.datasets[1].data = combined('upstairs', 'temp').slice(-pts);
+    charts.temp.data.datasets[2].data = combined('groundlevel', 'temp').slice(-pts);
     charts.temp.update();
   } else if (key === 'humid') {
     charts.humid.data.labels = combined('basement', 'labels').slice(-pts);
     charts.humid.data.datasets[0].data = combined('basement', 'humid').slice(-pts);
     charts.humid.data.datasets[1].data = combined('upstairs', 'humid').slice(-pts);
+    charts.humid.data.datasets[2].data = combined('groundlevel', 'humid').slice(-pts);
     charts.humid.update();
   } else if (key === 'hvac') {
     const supplyArr = combined('basement', 'supply').filter(v => v != null);
     const returnArr = combined('basement', 'return').filter(v => v != null);
     const hvacPts   = Math.min(ptsForRange(range), supplyArr.length, returnArr.length) || ptsForRange(range);
     const useReal   = supplyArr.length > 0;
-    charts.hvac.data.labels            = useReal ? combined('basement', 'labels').slice(-hvacPts) : simLabels;
-    charts.hvac.data.datasets[0].data  = useReal ? supplyArr.slice(-hvacPts) : simSupply;
-    charts.hvac.data.datasets[1].data  = useReal ? returnArr.slice(-hvacPts) : simReturn;
+    charts.hvac.data.labels           = useReal ? combined('basement', 'labels').slice(-hvacPts) : simLabels;
+    charts.hvac.data.datasets[0].data = useReal ? supplyArr.slice(-hvacPts) : simSupply;
+    charts.hvac.data.datasets[1].data = useReal ? returnArr.slice(-hvacPts) : simReturn;
     charts.hvac.update();
   } else if (key === 'delta') {
     const supplyArr = combined('basement', 'supply').filter(v => v != null);
