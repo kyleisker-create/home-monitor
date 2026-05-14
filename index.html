@@ -402,33 +402,86 @@
       <span id="alert-banner-text"></span>
     </div>
 
-    <!-- Device tabs -->
+    <!-- Live section tabs -->
     <div class="device-tabs">
-      <button class="device-tab active" id="tab-basement" onclick="switchDevice('basement')">
+      <button class="device-tab active" id="tab-temphumi" onclick="switchLiveTab('temphumi')">
         <div class="tab-dot"></div>
-        Basement
-        <span class="tab-reading" id="tab-reading-basement">--°F</span>
+        Temp &amp; Humidity
       </button>
-      <button class="device-tab upstairs" id="tab-upstairs" onclick="switchDevice('upstairs')">
+      <button class="device-tab" id="tab-hvac" onclick="switchLiveTab('hvac')">
         <div class="tab-dot"></div>
-        Upstairs
-        <span class="tab-reading" id="tab-reading-upstairs">--°F</span>
+        HVAC
       </button>
-      <button class="device-tab groundlevel" id="tab-groundlevel" onclick="switchDevice('groundlevel')">
+      <button class="device-tab" id="tab-leak" onclick="switchLiveTab('leak')">
         <div class="tab-dot"></div>
-        Ground level
-        <span class="tab-reading" id="tab-reading-groundlevel">--°F</span>
-      </button>
-      <button class="device-tab all" id="tab-all" onclick="switchDevice('all')">
-        <div class="tab-dot"></div>
-        All devices
+        Leak Detection
       </button>
     </div>
 
-    <!-- Basement view -->
-    <div id="view-basement">
-      <div class="section-label">Basement ESP32 — live readings</div>
-      <div class="sensor-grid">
+    <!-- ── TEMP & HUMIDITY VIEW ── -->
+    <div id="view-temphumi">
+
+      <!-- Upstairs -->
+      <div class="section-label" style="margin-top:8px">Upstairs</div>
+      <div class="sensor-grid" style="margin-bottom:20px">
+        <div class="sensor-card upstairs" id="card-u-temp">
+          <div class="card-header">
+            <span class="card-label">Temperature</span>
+            <div class="card-badges">
+              <span class="card-badge purple">Upstairs</span>
+              <span class="card-badge" id="badge-u-temp">--</span>
+            </div>
+          </div>
+          <div class="card-value" id="val-u-temp">--<span class="unit">°F</span></div>
+          <div class="card-sub">DHT22 — upstairs</div>
+          <svg class="spark" id="spark-u-temp" viewBox="0 0 180 32" preserveAspectRatio="none"></svg>
+        </div>
+        <div class="sensor-card upstairs" id="card-u-humid">
+          <div class="card-header">
+            <span class="card-label">Humidity</span>
+            <div class="card-badges">
+              <span class="card-badge purple">Upstairs</span>
+              <span class="card-badge" id="badge-u-humid">--</span>
+            </div>
+          </div>
+          <div class="card-value" id="val-u-humid">--<span class="unit">%</span></div>
+          <div class="card-sub">Comfort range: 30–50%</div>
+          <svg class="spark" id="spark-u-humid" viewBox="0 0 180 32" preserveAspectRatio="none"></svg>
+        </div>
+      </div>
+
+      <!-- Ground Level -->
+      <div class="section-label">Ground Level</div>
+      <div class="sensor-grid" style="margin-bottom:20px">
+        <div class="sensor-card groundlevel" id="card-g-temp">
+          <div class="card-header">
+            <span class="card-label">Temperature</span>
+            <div class="card-badges">
+              <span class="card-badge" style="background:rgba(46,204,113,0.12);color:var(--accent-green);border-color:rgba(46,204,113,0.2)">Ground level</span>
+              <span class="card-badge" id="badge-g-temp">--</span>
+            </div>
+          </div>
+          <div class="card-value" id="val-g-temp">--<span class="unit">°F</span></div>
+          <div class="card-sub">DHT22 — ground level</div>
+          <svg class="spark" id="spark-g-temp" viewBox="0 0 180 32" preserveAspectRatio="none"></svg>
+        </div>
+        <div class="sensor-card groundlevel" id="card-g-humid">
+          <div class="card-header">
+            <span class="card-label">Humidity</span>
+            <div class="card-badges">
+              <span class="card-badge" style="background:rgba(46,204,113,0.12);color:var(--accent-green);border-color:rgba(46,204,113,0.2)">Ground level</span>
+              <span class="card-badge" id="badge-g-humid">--</span>
+            </div>
+          </div>
+          <div class="card-value" id="val-g-humid">--<span class="unit">%</span></div>
+          <div class="card-sub">Comfort range: 30–50%</div>
+          <svg class="spark" id="spark-g-humid" viewBox="0 0 180 32" preserveAspectRatio="none"></svg>
+        </div>
+      </div>
+
+      <!-- Basement -->
+      <div class="section-label">Basement</div>
+      <div class="sensor-grid" style="margin-bottom:20px">
         <div class="sensor-card basement" id="card-b-temp">
           <div class="card-header">
             <span class="card-label">Temperature</span>
@@ -453,17 +506,41 @@
           <div class="card-sub">Comfort range: 30–50%</div>
           <svg class="spark" id="spark-b-humid" viewBox="0 0 180 32" preserveAspectRatio="none"></svg>
         </div>
-        <div class="sensor-card basement" id="card-b-leak">
-          <div class="card-header">
-            <span class="card-label">Leak detection</span>
-            <div class="card-badges">
-              <span class="card-badge blue">Basement</span>
-              <span class="card-badge" id="badge-b-leak">Dry</span>
-            </div>
+      </div>
+
+      <!-- Comparison -->
+      <div class="section-label">Floor comparison</div>
+      <div class="comparison-grid" style="margin-bottom:20px">
+        <div class="comparison-card" style="--card-accent: var(--accent-cyan)">
+          <div class="comparison-title">Temperature</div>
+          <div class="comparison-row">
+            <div class="comparison-device"><div class="device-pip upstairs"></div>Upstairs vs Basement</div>
+            <div class="comparison-value" id="diff-u-b-temp">--</div>
           </div>
-          <div class="card-value" id="val-b-leak" style="font-size:22px;padding-top:6px">No leak</div>
-          <div class="card-sub" id="sub-b-leak">Floor drain sensor active</div>
+          <div class="comparison-row">
+            <div class="comparison-device"><div class="device-pip groundlevel"></div>Ground Level vs Basement</div>
+            <div class="comparison-value" id="diff-g-b-temp">--</div>
+          </div>
         </div>
+        <div class="comparison-card" style="--card-accent: var(--accent-cyan)">
+          <div class="comparison-title">Humidity</div>
+          <div class="comparison-row">
+            <div class="comparison-device"><div class="device-pip upstairs"></div>Upstairs vs Basement</div>
+            <div class="comparison-value" id="diff-u-b-humid">--</div>
+          </div>
+          <div class="comparison-row">
+            <div class="comparison-device"><div class="device-pip groundlevel"></div>Ground Level vs Basement</div>
+            <div class="comparison-value" id="diff-g-b-humid">--</div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- end view-temphumi -->
+
+    <!-- ── HVAC VIEW ── -->
+    <div id="view-hvac" style="display:none">
+      <div class="section-label" style="margin-top:8px">HVAC — Basement</div>
+      <div class="sensor-grid">
         <div class="sensor-card sim" id="card-supply">
           <div class="card-header">
             <span class="card-label">HVAC supply</span>
@@ -501,128 +578,27 @@
           <div id="ideal-delta" style="margin-top:10px;font-family:var(--font-mono);font-size:10px;color:var(--text-dim)">Ideal: 14–22°F</div>
         </div>
       </div>
-    </div>
+    </div><!-- end view-hvac -->
 
-    <!-- Upstairs view -->
-    <div id="view-upstairs" style="display:none">
-      <div class="section-label">Upstairs ESP32 — live readings</div>
+    <!-- ── LEAK DETECTION VIEW ── -->
+    <div id="view-leak" style="display:none">
+      <div class="section-label" style="margin-top:8px">Leak Detection — Basement</div>
       <div class="sensor-grid">
-        <div class="sensor-card upstairs" id="card-u-temp">
+        <div class="sensor-card basement" id="card-b-leak">
           <div class="card-header">
-            <span class="card-label">Temperature</span>
+            <span class="card-label">Leak detection</span>
             <div class="card-badges">
-              <span class="card-badge purple">Upstairs</span>
-              <span class="card-badge" id="badge-u-temp">--</span>
+              <span class="card-badge blue">Basement</span>
+              <span class="card-badge" id="badge-b-leak">Dry</span>
             </div>
           </div>
-          <div class="card-value" id="val-u-temp">--<span class="unit">°F</span></div>
-          <div class="card-sub">DHT22 — upstairs</div>
-          <svg class="spark" id="spark-u-temp" viewBox="0 0 180 32" preserveAspectRatio="none"></svg>
-        </div>
-        <div class="sensor-card upstairs" id="card-u-humid">
-          <div class="card-header">
-            <span class="card-label">Humidity</span>
-            <div class="card-badges">
-              <span class="card-badge purple">Upstairs</span>
-              <span class="card-badge" id="badge-u-humid">--</span>
-            </div>
-          </div>
-          <div class="card-value" id="val-u-humid">--<span class="unit">%</span></div>
-          <div class="card-sub">Comfort range: 30–50%</div>
-          <svg class="spark" id="spark-u-humid" viewBox="0 0 180 32" preserveAspectRatio="none"></svg>
+          <div class="card-value" id="val-b-leak" style="font-size:22px;padding-top:6px">No leak</div>
+          <div class="card-sub" id="sub-b-leak">Floor drain sensor active</div>
         </div>
       </div>
-    </div>
+    </div><!-- end view-leak -->
 
-    <!-- Ground level view -->
-    <div id="view-groundlevel" style="display:none">
-      <div class="section-label">Ground level ESP32 — live readings</div>
-      <div class="sensor-grid">
-        <div class="sensor-card groundlevel" id="card-g-temp">
-          <div class="card-header">
-            <span class="card-label">Temperature</span>
-            <div class="card-badges">
-              <span class="card-badge" style="background:rgba(46,204,113,0.12);color:var(--accent-green);border-color:rgba(46,204,113,0.2)">Ground level</span>
-              <span class="card-badge" id="badge-g-temp">--</span>
-            </div>
-          </div>
-          <div class="card-value" id="val-g-temp">--<span class="unit">°F</span></div>
-          <div class="card-sub">DHT22 — ground level</div>
-          <svg class="spark" id="spark-g-temp" viewBox="0 0 180 32" preserveAspectRatio="none"></svg>
-        </div>
-        <div class="sensor-card groundlevel" id="card-g-humid">
-          <div class="card-header">
-            <span class="card-label">Humidity</span>
-            <div class="card-badges">
-              <span class="card-badge" style="background:rgba(46,204,113,0.12);color:var(--accent-green);border-color:rgba(46,204,113,0.2)">Ground level</span>
-              <span class="card-badge" id="badge-g-humid">--</span>
-            </div>
-          </div>
-          <div class="card-value" id="val-g-humid">--<span class="unit">%</span></div>
-          <div class="card-sub">Comfort range: 30–50%</div>
-          <svg class="spark" id="spark-g-humid" viewBox="0 0 180 32" preserveAspectRatio="none"></svg>
-        </div>
-      </div>
-    </div>
-
-    <!-- All devices view -->
-    <div id="view-all" style="display:none">
-      <div class="section-label">All devices — comparison</div>
-      <div class="comparison-grid">
-        <div class="comparison-card" style="--card-accent: var(--accent-cyan)">
-          <div class="comparison-title">Temperature</div>
-          <div class="comparison-row">
-            <div class="comparison-device">
-              <div class="device-pip basement"></div>
-              Basement
-            </div>
-            <div class="comparison-value" id="all-b-temp">--<span class="unit">°F</span></div>
-          </div>
-          <div class="comparison-row">
-            <div class="comparison-device">
-              <div class="device-pip upstairs"></div>
-              Upstairs
-            </div>
-            <div class="comparison-value" id="all-u-temp">--<span class="unit">°F</span></div>
-          </div>
-          <div class="comparison-row">
-            <div class="comparison-device">
-              <div class="device-pip groundlevel"></div>
-              Ground level
-            </div>
-            <div class="comparison-value" id="all-g-temp">--<span class="unit">°F</span></div>
-          </div>
-          <div style="margin-top:12px;font-family:var(--font-mono);font-size:10px;color:var(--text-dim)" id="all-temp-diff"></div>
-        </div>
-        <div class="comparison-card" style="--card-accent: var(--accent-cyan)">
-          <div class="comparison-title">Humidity</div>
-          <div class="comparison-row">
-            <div class="comparison-device">
-              <div class="device-pip basement"></div>
-              Basement
-            </div>
-            <div class="comparison-value" id="all-b-humid">--<span class="unit">%</span></div>
-          </div>
-          <div class="comparison-row">
-            <div class="comparison-device">
-              <div class="device-pip upstairs"></div>
-              Upstairs
-            </div>
-            <div class="comparison-value" id="all-u-humid">--<span class="unit">%</span></div>
-          </div>
-          <div class="comparison-row">
-            <div class="comparison-device">
-              <div class="device-pip groundlevel"></div>
-              Ground level
-            </div>
-            <div class="comparison-value" id="all-g-humid">--<span class="unit">%</span></div>
-          </div>
-          <div style="margin-top:12px;font-family:var(--font-mono);font-size:10px;color:var(--text-dim)" id="all-humid-diff"></div>
-        </div>
-      </div>
-    </div>
-
-  </div>
+  </div><!-- end section-live -->
 
   <!-- ── HISTORY ── -->
   <div class="section" id="section-history">
@@ -856,14 +832,12 @@ function showSection(name) {
   if (name === 'settings') updateDeviceStatus();
 }
 
-function switchDevice(device) {
-  activeDevice = device;
+function switchLiveTab(tab) {
   document.querySelectorAll('.device-tab').forEach(t => t.classList.remove('active'));
-  document.getElementById('tab-' + device).classList.add('active');
-  document.getElementById('view-basement').style.display   = device === 'basement'    ? 'block' : 'none';
-  document.getElementById('view-upstairs').style.display   = device === 'upstairs'    ? 'block' : 'none';
-  document.getElementById('view-groundlevel').style.display = device === 'groundlevel' ? 'block' : 'none';
-  document.getElementById('view-all').style.display        = device === 'all'         ? 'block' : 'none';
+  document.getElementById('tab-' + tab).classList.add('active');
+  document.getElementById('view-temphumi').style.display = tab === 'temphumi' ? 'block' : 'none';
+  document.getElementById('view-hvac').style.display     = tab === 'hvac'     ? 'block' : 'none';
+  document.getElementById('view-leak').style.display     = tab === 'leak'     ? 'block' : 'none';
 }
 
 // ── SIMULATED DATA (HVAC) ──────────────────────────────────────────────
@@ -1037,12 +1011,7 @@ async function fetchDevice(deviceKey) {
       store.basement.lastDelta  = deltaT;
     }
 
-    // Tab summary
-    document.getElementById(`tab-reading-${deviceKey}`).textContent = Math.round(tempF) + '°F';
-
-    // All devices comparison
-    document.getElementById(`all-${pfx}-temp`).innerHTML  = Math.round(tempF)    + '<span class="unit">°F</span>';
-    document.getElementById(`all-${pfx}-humid`).innerHTML = Math.round(humidity) + '<span class="unit">%</span>';
+    // Tab summary — no longer needed (no per-device tabs) but keep store update
     updateComparison();
 
     // Log alerts
@@ -1056,18 +1025,32 @@ async function fetchDevice(deviceKey) {
 }
 
 function updateComparison() {
-  const bt = store.basement.lastTemp, ut = store.upstairs.lastTemp, gt = store.groundlevel.lastTemp;
-  const bh = store.basement.lastHumid, uh = store.upstairs.lastHumid, gh = store.groundlevel.lastHumid;
-  // Show range across all available devices
-  const temps  = [bt, ut, gt].filter(v => v != null);
-  const humids = [bh, uh, gh].filter(v => v != null);
-  if (temps.length > 1) {
-    const minT = Math.min(...temps), maxT = Math.max(...temps);
-    document.getElementById('all-temp-diff').textContent = `Range: ${Math.round(minT)}°F – ${Math.round(maxT)}°F across active devices`;
+  const bt = store.basement.lastTemp,    ut = store.upstairs.lastTemp,    gt = store.groundlevel.lastTemp;
+  const bh = store.basement.lastHumid,   uh = store.upstairs.lastHumid,   gh = store.groundlevel.lastHumid;
+
+  // Upstairs vs Basement temp
+  if (bt != null && ut != null) {
+    const diff = Math.round((ut - bt) * 10) / 10;
+    document.getElementById('diff-u-b-temp').innerHTML =
+      (diff > 0 ? '+' : '') + diff + '<span class="unit">°F</span>';
   }
-  if (humids.length > 1) {
-    const minH = Math.min(...humids), maxH = Math.max(...humids);
-    document.getElementById('all-humid-diff').textContent = `Range: ${Math.round(minH)}% – ${Math.round(maxH)}% across active devices`;
+  // Ground level vs Basement temp
+  if (bt != null && gt != null) {
+    const diff = Math.round((gt - bt) * 10) / 10;
+    document.getElementById('diff-g-b-temp').innerHTML =
+      (diff > 0 ? '+' : '') + diff + '<span class="unit">°F</span>';
+  }
+  // Upstairs vs Basement humid
+  if (bh != null && uh != null) {
+    const diff = Math.round((uh - bh) * 10) / 10;
+    document.getElementById('diff-u-b-humid').innerHTML =
+      (diff > 0 ? '+' : '') + diff + '<span class="unit">%</span>';
+  }
+  // Ground level vs Basement humid
+  if (bh != null && gh != null) {
+    const diff = Math.round((gh - bh) * 10) / 10;
+    document.getElementById('diff-g-b-humid').innerHTML =
+      (diff > 0 ? '+' : '') + diff + '<span class="unit">%</span>';
   }
 }
 
@@ -1159,15 +1142,12 @@ function updateGlobalStatus() {
     banner.classList.add('visible');
     bannerT.textContent = who + ' not responding — check power and Wi-Fi';
 
-    // Mark the offline card visually
+    // Mark the offline cards visually
     ['basement', 'upstairs', 'groundlevel'].forEach(dk => {
       const pfx  = dk === 'basement' ? 'b' : dk === 'upstairs' ? 'u' : 'g';
       const card = document.getElementById(`card-${pfx}-temp`);
       if (!card) return;
-      if (isOffline(dk)) {
-        card.classList.add('status-warn');
-        document.getElementById(`tab-reading-${dk}`).textContent = 'offline';
-      }
+      if (isOffline(dk)) card.classList.add('status-warn');
     });
 
   } else if (bWarn || uWarn || gWarn) {
@@ -1271,7 +1251,7 @@ function drawSpark(id, data, color) {
   const svg = document.getElementById(id);
   if (!svg || data.length < 2) return;
   const w = 180, h = 32, pad = 2;
-  const slice = data.slice(-60);
+  const slice = data.slice(-360);
   const min = Math.min(...slice), max = Math.max(...slice), range = max - min || 1;
   const pts = slice.map((v, i) => {
     const x = pad + (i / (slice.length - 1)) * (w - pad * 2);
@@ -1481,7 +1461,7 @@ document.querySelectorAll('.section').forEach(s => s.classList.remove('active'))
 document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
 document.getElementById('section-live').classList.add('active');
 document.getElementById('nav-live').classList.add('active');
-switchDevice('basement');
+switchLiveTab('temphumi');
 
 fetchHistory().then(() => fetchAllDevices());
 setInterval(fetchAllDevices, 30000);
